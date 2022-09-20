@@ -3,52 +3,52 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 macro_rules! fnd {
-    ($Name:ident: $ty:tt) => {
-        fn $ty(self, val: $ty) -> $Name<Self>
-        where
-            Self: Sized,
-        {
-            $Name::new(self, val)
-        }
-    };
+	($Name:ident: $ty:tt) => {
+		fn $ty(self, val: $ty) -> $Name<Self>
+		where
+			Self: Sized,
+		{
+			$Name::new(self, val)
+		}
+	};
 }
 
 pub trait Rw {
-    fnd!(Bool: bool);
-    fnd!(Char: char);
+	fnd!(Bool: bool);
+	fnd!(Char: char);
 
-    fnd!(U8: u8);
-    fnd!(U16: u16);
-    fnd!(U32: u32);
-    fnd!(U64: u64);
-    fnd!(U128: u128);
+	fnd!(U8: u8);
+	fnd!(U16: u16);
+	fnd!(U32: u32);
+	fnd!(U64: u64);
+	fnd!(U128: u128);
 
-    fnd!(I8: i8);
-    fnd!(I16: i16);
-    fnd!(I32: i32);
-    fnd!(I64: i64);
-    fnd!(I128: i128);
+	fnd!(I8: i8);
+	fnd!(I16: i16);
+	fnd!(I32: i32);
+	fnd!(I64: i64);
+	fnd!(I128: i128);
 }
 
 macro_rules! foundational {
-    ($Name:ident: $ty:ty) => {
-        pub struct $Name<RW>
-        where
-            RW: Rw,
-        {
-            pub(crate) rw: RW,
-            pub value: $ty,
-        }
+	($Name:ident: $ty:ty) => {
+		pub struct $Name<RW>
+		where
+			RW: Rw,
+		{
+			pub(crate) rw: RW,
+			pub value: $ty,
+		}
 
-        impl<RW> $Name<RW>
-        where
-            RW: Rw,
-        {
-            pub fn new(rw: RW, value: $ty) -> Self {
-                Self { rw, value }
-            }
-        }
-    };
+		impl<RW> $Name<RW>
+		where
+			RW: Rw,
+		{
+			pub fn new(rw: RW, value: $ty) -> Self {
+				Self { rw, value }
+			}
+		}
+	};
 }
 
 foundational!(Bool: bool);
