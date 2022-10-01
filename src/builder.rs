@@ -7,24 +7,31 @@ use crate::writer::*;
 
 pub struct Nil;
 
-pub trait ToRwInterface {
-	fn rw<I>(&self) -> I
+#[doc(notable_trait)]
+pub trait ToRwInterface<Tail> {
+	type Output: RwInterface<Head = Self, Tail = Tail>;
+
+	/// Creates a new [`RwInterface`] to encode `&self`.
+	fn rw(&self) -> Self::Output
 	where
-		I: RwInterface<Tail = Nil, Head = Self>,
+		Self::Output: RwInterface<Head = Self, Tail = Nil>,
 		Self: Sized;
 
-	fn to_rw<T: RwInterface, I>(&self, rwi: T) -> I
+	/// Wraps the given `interface` with `&self`'s [`RwInterface`].
+	fn to_rw(&self, interface: Tail) -> Self::Output
 	where
-		I: RwInterface<Head = Self, Tail = T>,
 		Self: Sized;
+}
 
-	fn from_rwi<I>(rwi: I) -> Self
-	where
-		I: RwInterface<Head = Self>,
-		Self: Sized,
-	{
-		*rwi.head()
-	}
+macro_rules! prim {
+	($Name:ident: $ty:tt) => {
+		fn $ty(self, value: $ty) -> $Name<Self>
+		where
+			Self: Sized,
+		{
+			$Name::new(self, value)
+		}
+	};
 }
 
 pub trait RwInterface {
@@ -35,24 +42,31 @@ pub trait RwInterface {
 	/// The tail is the type of all the other values added.
 	type Tail;
 
+	/// Returns a reference to the last value added.
 	fn head(&self) -> &Self::Head;
+	/// Returns a reference to the tail (i.e., every value added other than the
+	/// one added most recently).
 	fn tail(&self) -> &Self::Tail;
 
-	fn take(self) -> (Self::Head, Self::Tail)
-	where
-		Self: Sized,
-	{
-		(*self.head(), *self.tail())
-	}
-
+	/// Constructs `Self` from the given `tail` and `head`.
 	fn new(tail: Self::Tail, head: Self::Head) -> Self;
+	/// Consumes `self` and returns a tuple containing the head and tail.
+	fn pop(self) -> (Self::Head, Self::Tail);
 
-	fn to(self, tail: Self::Tail) -> Self
-	where
-		Self: Sized,
-	{
-		Self::new(tail, *self.head())
-	}
+	prim!(Bool: bool);
+	prim!(Char: char);
+
+	prim!(U8: u8);
+	prim!(U16: u16);
+	prim!(U32: u32);
+	prim!(U64: u64);
+	prim!(U128: u128);
+
+	prim!(I8: i8);
+	prim!(I16: i16);
+	prim!(I32: i32);
+	prim!(I64: i64);
+	prim!(I128: i128);
 }
 
 pub struct Val<Head, Tail> {
@@ -68,6 +82,10 @@ impl<Head, Tail> RwInterface for Val<Head, Tail> {
 		Self { value: head, tail }
 	}
 
+	fn pop(self) -> (Self::Head, Self::Tail) {
+		(self.value, self.tail)
+	}
+
 	fn head(&self) -> &Head {
 		&self.value
 	}
@@ -77,14 +95,85 @@ impl<Head, Tail> RwInterface for Val<Head, Tail> {
 	}
 }
 
+macro_rules! prim {
+	($Name:ident: $ty:ty) => {
+		pub struct $Name<Tail = Nil> {
+			pub value: $ty,
+			tail: Tail,
+		}
+
+		impl<Tail> RwInterface for $Name<Tail> {
+			type Head = $ty;
+			type Tail = Tail;
+
+			fn new(tail: Tail, head: $ty) -> Self {
+				Self { value: head, tail }
+			}
+
+			fn pop(self) -> (Self::Head, Self::Tail) {
+				(self.value, self.tail)
+			}
+
+			fn head(&self) -> &$ty {
+				&self.value
+			}
+
+			fn tail(&self) -> &Tail {
+				&self.tail
+			}
+		}
+
+		impl<Tail> ToRwInterface<Tail> for $ty {
+			type Output = $Name<Tail>;
+
+			fn rw(&self) -> Self::Output
+			where
+				Self::Output: RwInterface<Head = Self, Tail = Nil>,
+				Self: Sized,
+			{
+				$Name::new(Nil, *self)
+			}
+
+			fn to_rw(&self, interface: Tail) -> Self::Output
+			where
+				Self: Sized,
+			{
+				$Name::new(interface, *self)
+			}
+		}
+	};
+}
+
+prim!(Bool: bool);
+prim!(Char: char);
+
+prim!(U8: u8);
+prim!(U16: u16);
+prim!(U32: u32);
+prim!(U64: u64);
+prim!(U128: u128);
+
+prim!(I8: i8);
+prim!(I16: i16);
+prim!(I32: i32);
+prim!(I64: i64);
+prim!(I128: i128);
+
+/// Deserializes `T` with the given additional contextual information.
+///
+/// For example, this is used to deserialize lists of values: the length of the
+/// list is given by the `context`, allowing the correct number of elements to
+/// be read.
 pub trait DeserializeWith<Context, T = Self> {
 	fn read_with(reader: &mut impl Reader, context: Context) -> T;
 }
 
+/// Serializes `&self` to bytes with a [`Writer`].
 pub trait Serialize {
-	fn write(self, writer: &mut impl Writer);
+	fn write(&self, writer: &mut impl Writer);
 }
 
+/// Deserializes `T` with a ]`Reader`\.
 pub trait Deserialize<T = Self> {
 	fn read(reader: &mut impl Reader) -> T;
 }
@@ -95,9 +184,9 @@ where
 	T::Head: Serialize,
 	T::Tail: Serialize,
 {
-	fn write(self, writer: &mut impl Writer) {
-		self.tail().write(writer);
-		self.head().write(writer);
+	fn write(&self, writer: &mut impl Writer) {
+		self.tail().write(writer); // write the rest of the list (the tail)
+		self.head().write(writer); // write the head value
 	}
 }
 
@@ -108,6 +197,7 @@ where
 	T::Tail: Deserialize,
 {
 	fn read(reader: &mut impl Reader) -> Self {
+		// Self::new(reader.read(), reader.read())
 		Self::new(T::Tail::read(reader), T::Head::read(reader))
 	}
 }

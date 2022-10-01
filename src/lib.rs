@@ -29,6 +29,7 @@ mod impls;
 
 pub use reader::{ReadError, Reader};
 pub use writer::{WriteError, Writer};
+pub use builder::*;
 
 pub trait ByteSize {
 	/// Returns the number of bytes that `self` will be [written] as.
@@ -38,7 +39,6 @@ pub trait ByteSize {
 }
 
 /// Reads a type from bytes.
-#[doc(notable_trait)]
 pub trait Readable {
 	/// Reads [`Self`] from a [`Reader`].
 	fn read_from(reader: &mut impl Reader) -> Result<Self, ReadError>
@@ -55,7 +55,6 @@ pub trait ReadableWithSize {
 }
 
 /// Reads a list of elements from bytes.
-#[doc(notable_trait)]
 pub trait ReadableWithLength {
 	/// Reads a list of values from a [`Reader`] using the given length of the
 	/// list.
