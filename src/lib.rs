@@ -2,7 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#![feature(doc_notable_trait)]
 // Deny the following clippy lints to enforce them:
 #![deny(clippy::complexity)]
 #![deny(clippy::correctness)]
@@ -20,68 +19,40 @@
 #![allow(clippy::wildcard_imports)]
 #![allow(clippy::module_name_repetitions)]
 
-mod builder;
+use std::error::Error;
+use bytes::{Buf, BufMut};
 
-mod reader;
-mod writer;
+type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
-mod impls;
-
-pub use reader::{ReadError, Reader};
-pub use writer::{WriteError, Writer};
-pub use builder::*;
-
-pub trait ByteSize {
-	/// Returns the number of bytes that `self` will be [written] as.
-	///
-	/// [written]: Writable::write_to
-	fn byte_size(&self) -> usize;
+pub trait DataSize {
+	/// Returns the size of `self` in bytes when written with [`Writable`].
+	fn data_size(&self) -> usize;
 }
 
 /// Reads a type from bytes.
 pub trait Readable {
-	/// Reads [`Self`] from a [`Reader`].
-	fn read_from(reader: &mut impl Reader) -> Result<Self, ReadError>
-	where
-		Self: Sized;
+	/// Reads [`Self`] from a [`Buf`] of bytes.
+	fn read_from(reader: &mut impl Buf) -> Result<Self> where Self: Sized;
 }
 
-/// Reads a type from a specific number of bytes.
-pub trait ReadableWithSize {
-	/// Reads [`Self`] from a [`Reader`] using the given number of bytes.
-	fn read_from_with_count(reader: &mut impl Reader, num_bytes: usize) -> Result<Self, ReadError>
-	where
-		Self: Sized;
+/// Allows the reading of a type from bytes given some additional
+/// [`Context`](Self::Context).
+pub trait ContextualReadable {
+	/// The type of context with which this type can be read from bytes.
+	///
+	/// For example, this might be `usize` for some collection, where that
+	/// `usize` context represents the length of the list with which to read.
+	type Context;
+
+	/// Reads [`Self`] from a [`Buf`] of bytes, given some additional
+	/// [`Context`](Self::Context).
+	fn read_with(reader: &mut impl Buf, context: &Self::Context) -> Result<Self> where Self: Sized;
 }
 
-/// Reads a list of elements from bytes.
-pub trait ReadableWithLength {
-	/// Reads a list of values from a [`Reader`] using the given length of the
-	/// list.
-	fn read_from_with_length(reader: &mut impl Reader, length: usize) -> Result<Self, ReadError>
-	where
-		Self: Sized;
-}
-
-/// Writes a type as bytes.
-#[doc(notable_trait)]
+/// Allows a type to be written as bytes.
 pub trait Writable {
-	/// Writes `self` as bytes to a [`Writer`].
-	fn write_to(&self, writer: &mut impl Writer) -> Result<(), WriteError>
-	where
-		Self: Sized;
-}
-
-/// Writes a type as a specific number of bytes.
-pub trait WritableWithSize {
-	/// Writes `self` as the given number of bytes to a [`Writer`].
-	fn write_to_with_count(
-		&self,
-		writer: &mut impl Writer,
-		num_bytes: usize,
-	) -> Result<(), WriteError>
-	where
-		Self: Sized;
+	/// Writes [`self`](Self) as bytes to a [`BufMut`].
+	fn write_to(&self, writer: &mut impl BufMut) -> Result where Self: Sized;
 }
 
 // This function is unused, but writing it here asserts that these traits are
@@ -89,11 +60,9 @@ pub trait WritableWithSize {
 // of these traits are accidentally made _object unsafe_, which means that they
 // cannot be used with the `dyn` keyword.
 fn _assert_object_safety(
-	_byte_count: &dyn ByteSize,
-	_read_bytes: &dyn Readable,
-	_read_sized: &dyn ReadableWithSize,
-	_read_list: &dyn ReadableWithLength,
-	_write_bytes: &dyn Writable,
-	_write_sized: &dyn WritableWithSize,
+	_data_size: &dyn DataSize,
+	_readable: &dyn Readable,
+	_contextual_readable: &dyn ContextualReadable<Context=()>,
+	_writable: &dyn Writable,
 ) {
 }
