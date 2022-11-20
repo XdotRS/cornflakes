@@ -2,6 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+// Specialization is needed for implementing DataSize and StaticDataSize for Option<T>
+#![feature(specialization)]
+
 // Deny the following clippy lints to enforce them:
 #![deny(clippy::complexity)]
 #![deny(clippy::correctness)]
@@ -21,13 +24,11 @@
 
 use std::error::Error;
 use bytes::{Buf, BufMut};
+use datasize::{DataSize, StaticDataSize};
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
-pub trait DataSize {
-	/// Returns the size of `self` in bytes when written with [`Writable`].
-	fn data_size(&self) -> usize;
-}
+pub mod datasize;
 
 /// Reads a type from bytes.
 pub trait Readable {
@@ -61,6 +62,7 @@ pub trait Writable {
 // cannot be used with the `dyn` keyword.
 fn _assert_object_safety(
 	_data_size: &dyn DataSize,
+	_static_data_size: &dyn StaticDataSize,
 	_readable: &dyn Readable,
 	_contextual_readable: &dyn ContextualReadable<Context=()>,
 	_writable: &dyn Writable,
