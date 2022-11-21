@@ -2,6 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+pub mod derive {
+	pub use datasize_macro::{DataSize, StaticDataSize};
+}
+
 pub trait DataSize {
 	/// Returns the size of `self` in bytes when written with [`Writable`].
 	fn data_size(&self) -> usize;
