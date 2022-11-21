@@ -2,6 +2,7 @@ use cornflakes::datasize::{
 	derive::{DataSize, StaticDataSize},
 	DataSize, StaticDataSize,
 };
+
 /// Here the size can be known at compile time
 ///
 /// Regardless of the variant chosen at runtime,
@@ -9,8 +10,8 @@ use cornflakes::datasize::{
 #[derive(StaticDataSize)]
 enum TestSizedEnum {
 	Unit,
-	Tuple(u16),
-	Struct { field1: u32, field2: i8 },
+	Unnamed(u16),
+	Named { field1: u32, field2: i8 },
 }
 
 /// Here the size can be known at compile time
@@ -21,13 +22,17 @@ struct TestSizedStruct {
 	enum_value: TestSizedEnum,
 }
 
+// TODO: Do we need this ?
+// #[derive(StaticDataSize)]
+// struct TestSizedTuple(u32, Option<i64>);
+
 /// Here the size cannot be known at compile time,
 /// So it can't implement `StaticDataSize`
 #[derive(DataSize)]
 enum TestDynamicEnum {
 	Unit,
-	Tuple(Vec<u8>),
-	Struct { field1: u32, field2: Vec<i16> },
+	Unnamed(Vec<u8>),
+	Named { field1: u32, field2: Vec<i16> },
 }
 
 /// Here the size cannot be known at compile time,
@@ -39,6 +44,10 @@ struct TestDynamicStruct {
 	enum_value: Vec<TestSizedEnum>,
 }
 
+// TODO: Do we need this ?
+// #[derive(DataSize)]
+// struct TestDynamicTuple(Vec<Option<u64>>, i64);
+
 #[test]
 fn test_sized_enum_unit() {
 	let data = TestSizedEnum::Unit;
@@ -46,14 +55,14 @@ fn test_sized_enum_unit() {
 }
 
 #[test]
-fn test_sized_enum_tuple() {
-	let data = TestSizedEnum::Tuple(u16::default());
+fn test_sized_enum_unnamed() {
+	let data = TestSizedEnum::Unnamed(u16::default());
 	assert_eq!(data.data_size(), 5);
 }
 
 #[test]
-fn test_sized_enum_struct() {
-	let data = TestSizedEnum::Struct {
+fn test_sized_enum_named() {
+	let data = TestSizedEnum::Named {
 		field1: u32::default(),
 		field2: i8::default(),
 	};
@@ -70,6 +79,12 @@ fn test_sized_struct() {
 	assert_eq!(data.data_size(), 17);
 }
 
+// #[test]
+// fn test_sized_tuple() {
+// 	let data = TestSizedTuple(u32::default(), None);
+// 	assert_eq!(data.data_size(), 12);
+// }
+
 #[test]
 fn test_dynamic_enum_unit() {
 	let data = TestDynamicEnum::Unit;
@@ -77,18 +92,18 @@ fn test_dynamic_enum_unit() {
 }
 
 #[test]
-fn test_dynamic_enum_tuple() {
-	let data = TestDynamicEnum::Tuple(Vec::from([u8::default(), u8::default()]));
+fn test_dynamic_enum_unnamed() {
+	let data = TestDynamicEnum::Unnamed(Vec::from([u8::default(), u8::default()]));
 	assert_eq!(data.data_size(), 2);
 }
 
 #[test]
-fn test_dynamic_enum_struct() {
-	let data = TestDynamicEnum::Struct {
+fn test_dynamic_enum_named() {
+	let data = TestDynamicEnum::Named {
 		field1: u32::default(),
-		field2: Vec::from([i16::default(), i16::default(), i16::default()]),
+		field2: vec![i16::default(); 10],
 	};
-	assert_eq!(data.data_size(), 10);
+	assert_eq!(data.data_size(), 24);
 }
 
 #[test]
@@ -100,3 +115,9 @@ fn test_dynamic_struct() {
 	};
 	assert_eq!(data.data_size(), 17);
 }
+
+// #[test]
+// fn test_dynamic_tuple() {
+// 	let data = TestDynamicTuple(vec![None; 10], i64::default());
+// 	assert_eq!(data.data_size(), 88);
+// }

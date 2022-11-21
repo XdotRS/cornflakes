@@ -41,10 +41,10 @@ static_type_size!(u8, 1);
 static_type_size!(i8, 1);
 static_type_size!(u16, 2);
 static_type_size!(i16, 2);
-static_type_size!(u32, 3);
-static_type_size!(i32, 3);
-static_type_size!(u64, 4);
-static_type_size!(i64, 4);
+static_type_size!(u32, 4);
+static_type_size!(i32, 4);
+static_type_size!(u64, 8);
+static_type_size!(i64, 8);
 
 impl<T> DataSize for Vec<T>
 where
@@ -78,5 +78,28 @@ where
 {
 	fn static_data_size() -> usize {
 	    T::static_data_size()
+	}
+}
+
+#[cfg(test)]
+mod test {
+    use super::DataSize;
+
+	#[test]
+	fn test_datasize_vec() {
+		let data = vec![i16::default(); 100];
+		assert_eq!(data.data_size(), 200);
+	}
+
+	#[test]
+	fn test_datasize_option_static() {
+		let data: Option<u64> = None;
+		assert_eq!(data.data_size(), 8);
+	}
+
+	#[test]
+	fn test_datasize_option_dynamic() {
+		let data: Option<Vec<i64>> = Some(vec![i64::default(); 10]);
+		assert_eq!(data.data_size(), 80);
 	}
 }
