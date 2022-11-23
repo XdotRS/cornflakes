@@ -4,13 +4,13 @@
 
 [package]
 name = "cornflakes"
-version = "0.0.0"
+version = "0.0.1"
 readme = false
-repository = "https://github.com/XdotRS/xrb/tree/main/cornflakes"
+repository = "https://github.com/XdotRS/cornflakes"
 documentation = "https://docs.aquariwm.org/doc/cornflakes"
 authors = ["X.RS", "Antikyth <antikyth at gmail dot com>"]
 edition = "2021"
-description = "Utilities for (de)serialization."
+description = "Utilities for (de)serialization in XRB."
 license = "MPL-2.0"
 keywords = ["serialization", "encoding", "bytes"]
 categories = ["encoding"]
