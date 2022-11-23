@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
-use quote::{format_ident, quote};
-use syn::{parse_macro_input, DeriveInput, Ident, Type};
+use quote::{format_ident, quote, ToTokens};
+use syn::{parse_macro_input, DeriveInput, Ident, PathArguments, Type};
 
 // mod definitions;
 
@@ -119,14 +119,35 @@ pub fn derive_static_data_size(item: TokenStream) -> TokenStream {
 		}
 		syn::Data::Struct(s) => {
 			// Retrieve types of all fields
-			let types: Vec<Type> = s.fields.iter().map(|f| f.ty.to_owned()).collect();
+			let types: Vec<_> = s
+				.fields
+				.iter()
+				.map(|f| f.ty.to_owned())
+				.filter_map(|t| match t {
+					Type::Path(p) => Some(p),
+					_ => None,
+				})
+				// Replacing every paths segments angle brackets argument
+				// Basically tansforming every Type<T> into Type::<T>
+				.map(|p| {
+					let idents: Vec<_> = p
+						.path
+						.segments
+						.iter()
+						.map(|s| {
+							let PathArguments::AngleBracketed(arg) = &s.arguments else {
+								return quote!(format_ident!("{}", s.ident));
+							};
+							let arg = arg.to_token_stream();
+							quote!(format_ident!("{}", s.ident)::#arg)
+						})
+						.collect();
+					quote!(#(::#idents)*)
+				})
+				.collect();
 
 			// We call `static_data_size()` on each of the names
-			// TODO: Find a way to implement wrapper types like Option<T>
-			//       We need to call the function like this:
-			//          Option::<T>::static_data_size()
-			// quote! { usize::default() #(+ #types::static_data_size())*}
-			quote! {0}
+			quote! ( usize::default() #(+ #types::static_data_size())*)
 		}
 		syn::Data::Union(_) => {
 			// TODO: find you what to do here
