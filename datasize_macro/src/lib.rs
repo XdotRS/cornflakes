@@ -135,14 +135,14 @@ pub fn derive_static_data_size(item: TokenStream) -> TokenStream {
 						.segments
 						.iter()
 						.map(|s| {
+							let ident = &s.ident;
 							let PathArguments::AngleBracketed(arg) = &s.arguments else {
-								return quote!(format_ident!("{}", s.ident));
+								return quote!(#ident);
 							};
-							let arg = arg.to_token_stream();
-							quote!(format_ident!("{}", s.ident)::#arg)
+							quote!(#ident::#arg)
 						})
 						.collect();
-					quote!(#(::#idents)*)
+					quote!(#(#idents)*)
 				})
 				.collect();
 
