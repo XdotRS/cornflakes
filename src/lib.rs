@@ -20,9 +20,29 @@
 #![allow(clippy::module_name_repetitions)]
 
 use std::error::Error;
-use bytes::{Buf, BufMut};
 
-type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
+use bytes::{Buf, BufMut};
+use thiserror::Error;
+
+pub type ReadResult<T> = Result<T, ReadError>;
+pub type WriteResult = Result<(), WriteError>;
+
+#[non_exhaustive]
+#[derive(Error, Debug)]
+pub enum ReadError {
+	#[error("unrecognized variant discriminant: {0}")]
+	UnrecognizedDiscriminant(u8),
+
+	#[error("{0}")]
+	Other(Box<dyn Error>),
+}
+
+#[non_exhaustive]
+#[derive(Error, Debug)]
+pub enum WriteError {
+	#[error("{0}")]
+	Other(Box<dyn Error>),
+}
 
 pub trait DataSize {
 	/// Returns the size of `self` in bytes when written with [`Writable`].
@@ -32,7 +52,9 @@ pub trait DataSize {
 /// Reads a type from bytes.
 pub trait Readable {
 	/// Reads [`Self`] from a [`Buf`] of bytes.
-	fn read_from(reader: &mut impl Buf) -> Result<Self> where Self: Sized;
+	fn read_from(reader: &mut impl Buf) -> ReadResult<Self>
+	where
+		Self: Sized;
 }
 
 /// Allows the reading of a type from bytes given some additional
@@ -46,13 +68,17 @@ pub trait ContextualReadable {
 
 	/// Reads [`Self`] from a [`Buf`] of bytes, given some additional
 	/// [`Context`](Self::Context).
-	fn read_with(reader: &mut impl Buf, context: &Self::Context) -> Result<Self> where Self: Sized;
+	fn read_with(reader: &mut impl Buf, context: &Self::Context) -> ReadResult<Self>
+	where
+		Self: Sized;
 }
 
 /// Allows a type to be written as bytes.
 pub trait Writable {
 	/// Writes [`self`](Self) as bytes to a [`BufMut`].
-	fn write_to(&self, writer: &mut impl BufMut) -> Result where Self: Sized;
+	fn write_to(&self, writer: &mut impl BufMut) -> WriteResult
+	where
+		Self: Sized;
 }
 
 // This function is unused, but writing it here asserts that these traits are
@@ -62,7 +88,7 @@ pub trait Writable {
 fn _assert_object_safety(
 	_data_size: &dyn DataSize,
 	_readable: &dyn Readable,
-	_contextual_readable: &dyn ContextualReadable<Context=()>,
+	_contextual_readable: &dyn ContextualReadable<Context = ()>,
 	_writable: &dyn Writable,
 ) {
 }
