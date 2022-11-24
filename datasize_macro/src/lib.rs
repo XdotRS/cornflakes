@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident, PathArguments, Type};
+use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident, Index, PathArguments, Type};
 
 #[proc_macro_derive(DataSize)]
 pub fn derive_data_size(item: TokenStream) -> TokenStream {
@@ -51,24 +51,31 @@ pub fn derive_data_size(item: TokenStream) -> TokenStream {
 				}
 			}
 		}
-		Data::Struct(s) => {
-			// Retreive the names of all the fields
-			let names: Vec<Ident> = s
-				.fields
-				.iter()
-				.enumerate()
-				.map(|(i, f)| {
-					if let Some(ident) = f.ident.to_owned() {
-						ident
-					} else {
-						format_ident!("{}", i)
-					}
-				})
-				.collect();
+		Data::Struct(s) => match &s.fields {
+			Fields::Named(f) => {
+				// Get a list of all named fields of a named variant
+				let names: Vec<Ident> = f.named.iter().filter_map(|f| f.ident.to_owned()).collect();
 
-			// We call `data_size()` on each of the names
-			quote! { usize::default() #(+ self.#names.data_size())*}
-		}
+				quote! {
+					usize::default() #(+ self.#names.data_size())*
+				}
+			}
+			Fields::Unnamed(f) => {
+				// Set a name for all fields of an unnamed variant
+				let names: Vec<Index> = f
+					.unnamed
+					.iter()
+					.enumerate()
+					.map(|(i, _)| Index::from(i))
+					.collect();
+
+				quote! {
+					usize::default() #(+ self.#names.data_size())*
+				}
+			}
+			// If the variant is a unit variant, then the size is 0
+			Fields::Unit => quote!(usize::default()),
+		},
 		Data::Union(_) => {
 			panic!("Unions are used for C bindings, you probably don't need this trait for it");
 		}

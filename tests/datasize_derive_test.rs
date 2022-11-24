@@ -25,8 +25,8 @@ struct TestSizedStruct {
 }
 
 // TODO: Do we need this ?
-// #[derive(StaticDataSize)]
-// struct TestSizedTuple(u32, Option<i64>);
+#[derive(StaticDataSize)]
+struct TestSizedTuple(u32, Option<i64>);
 
 /// Here the size cannot be known at compile time,
 /// So it can't implement `StaticDataSize`
@@ -47,8 +47,8 @@ struct TestDynamicStruct {
 }
 
 // TODO: Do we need this ?
-// #[derive(DataSize)]
-// struct TestDynamicTuple(Vec<Option<u64>>, i64);
+#[derive(DataSize)]
+struct TestDynamicTuple(Vec<Option<u64>>, i64);
 
 #[test]
 fn test_sized_enum_unit() {
@@ -81,11 +81,11 @@ fn test_sized_struct() {
 	assert_eq!(data.data_size(), 17);
 }
 
-// #[test]
-// fn test_sized_tuple() {
-// 	let data = TestSizedTuple(u32::default(), None);
-// 	assert_eq!(data.data_size(), 12);
-// }
+#[test]
+fn test_sized_tuple() {
+	let data = TestSizedTuple(u32::default(), None);
+	assert_eq!(data.data_size(), 12);
+}
 
 #[test]
 fn test_dynamic_enum_unit() {
@@ -118,8 +118,8 @@ fn test_dynamic_struct() {
 	assert_eq!(data.data_size(), 17);
 }
 
-// #[test]
-// fn test_dynamic_tuple() {
-// 	let data = TestDynamicTuple(vec![None; 10], i64::default());
-// 	assert_eq!(data.data_size(), 88);
-// }
+#[test]
+fn test_dynamic_tuple() {
+	let data = TestDynamicTuple(vec![None; 10], i64::default());
+	assert_eq!(data.data_size(), 88);
+}
