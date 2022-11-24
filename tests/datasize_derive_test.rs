@@ -1,4 +1,6 @@
 #![allow(unused)]
+#![allow(incomplete_features)]
+#![feature(specialization)]
 
 use cornflakes::datasize::{
 	derive::{DataSize, StaticDataSize},
@@ -24,7 +26,6 @@ struct TestSizedStruct {
 	enum_value: TestSizedEnum,
 }
 
-// TODO: Do we need this ?
 #[derive(StaticDataSize)]
 struct TestSizedTuple(u32, Option<i64>);
 
@@ -46,9 +47,49 @@ struct TestDynamicStruct {
 	enum_value: Vec<TestSizedEnum>,
 }
 
-// TODO: Do we need this ?
 #[derive(DataSize)]
 struct TestDynamicTuple(Vec<Option<u64>>, i64);
+
+// We don't know if the generic implements DataSize or StaticDataSize,
+// So we need both for both case.
+#[derive(DataSize, StaticDataSize)]
+enum TestEnumGenerics<T> {
+	Unit,
+	Unnamed(T),
+	Named { field1: T, field2: T },
+}
+#[derive(DataSize, StaticDataSize)]
+struct TestStructGenerics<T> {
+	value: T,
+	wrapper: Option<T>,
+	enum_value: TestEnumGenerics<T>,
+}
+#[derive(DataSize, StaticDataSize)]
+struct TestTupleGenerics<T>(Option<T>, TestEnumGenerics<T>);
+
+// TODO: Under here is what the derive should generate for types with generics
+//       that implements both DataSize and StaticDataSize.
+//       Note that we need specialization for now, and this is a Nightly only feature.
+//
+// impl<T: DataSize> DataSize for TestSizedEnumGenerics<T> {
+// 	default fn data_size(&self) -> usize {
+// 		match &self {
+// 			TestSizedEnumGenerics::Unit => 0,
+// 			TestSizedEnumGenerics::Unnamed(a) => a.data_size(),
+// 			TestSizedEnumGenerics::Named { field1, field2 } => field1.data_size() + field2.data_size(),
+// 		}
+// 	}
+// }
+// impl<T: DataSize + StaticDataSize> DataSize for TestSizedEnumGenerics<T> {
+// 	fn data_size(&self) -> usize {
+// 		T::static_data_size()
+// 	}
+// }
+// impl<T: StaticDataSize> StaticDataSize for TestSizedEnumGenerics<T> {
+// 	fn static_data_size() -> usize {
+// 		T::static_data_size()
+// 	}
+// }
 
 #[test]
 fn test_sized_enum_unit() {
@@ -122,4 +163,78 @@ fn test_dynamic_struct() {
 fn test_dynamic_tuple() {
 	let data = TestDynamicTuple(vec![None; 10], i64::default());
 	assert_eq!(data.data_size(), 88);
+}
+
+#[test]
+fn test_enum_with_sized_generics_unit() {
+	let data = TestEnumGenerics::<u32>::Unit;
+	assert_eq!(data.data_size(), 8);
+}
+
+#[test]
+fn test_enum_with_sized_generics_unnamed() {
+	let data = TestEnumGenerics::<u8>::Unnamed(u8::default());
+	assert_eq!(data.data_size(), 2);
+}
+
+#[test]
+fn test_enum_with_sized_generics_named() {
+	let data = TestEnumGenerics::<i64>::Named {
+		field1: i64::default(),
+		field2: i64::default(),
+	};
+	assert_eq!(data.data_size(), 16);
+}
+
+#[test]
+fn test_enum_with_dynamic_generics_unit() {
+	let data = TestEnumGenerics::<Vec<u32>>::Unit;
+	assert_eq!(data.data_size(), 0);
+}
+
+#[test]
+fn test_enum_with_dynamic_generics_unnamed() {
+	let data = TestEnumGenerics::<Vec<u8>>::Unnamed(Vec::from([u8::default(), u8::default()]));
+	assert_eq!(data.data_size(), 2);
+}
+
+#[test]
+fn test_enum_with_dynamic_generics_named() {
+	let data = TestEnumGenerics::<Vec<i64>>::Named {
+		field1: vec![i64::default()],
+		field2: vec![i64::default(); 10],
+	};
+	assert_eq!(data.data_size(), 88);
+}
+
+#[test]
+fn test_struct_with_sized_generics() {
+	let data = TestStructGenerics::<u16> {
+		value: u16::default(),
+		wrapper: None,
+		enum_value: TestEnumGenerics::Unit,
+	};
+	assert_eq!(data.data_size(), 6);
+}
+
+#[test]
+fn test_struct_with_dynamic_generics() {
+	let data = TestStructGenerics::<Vec<u8>> {
+		value: vec![u8::default()],
+		wrapper: Some(vec![u8::default(); 2]),
+		enum_value: vec![TestEnumGenerics::Unit],
+	};
+	assert_eq!(data.data_size(), 3);
+}
+
+#[test]
+fn test_tuple_with_sized_generics() {
+	let data = TestTupleGenerics::<i8>(None, TestEnumGenerics::Unit);
+	assert_eq!(data.data_size(), 2);
+}
+
+#[test]
+fn test_tuple_with_dynamic_generics() {
+	let data = TestTupleGenerics::<Vec<i8>>(Some(vec![i8::default; 10]), TestEnumGenerics::Unit);
+	assert_eq!(data.data_size(), 10);
 }
