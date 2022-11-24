@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use cornflakes::datasize::{
 	derive::{DataSize, StaticDataSize},
 	DataSize, StaticDataSize,

@@ -2,7 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Specialization is needed for implementing DataSize and StaticDataSize for Option<T>
+// We need specialization to implement DataSize for Wrapper types like Option<T>
+#![allow(incomplete_features)]
 #![feature(specialization)]
 
 // Deny the following clippy lints to enforce them:
