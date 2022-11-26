@@ -41,10 +41,11 @@ enum TestDynamicEnum {
 /// Here the size cannot be known at compile time,
 /// So it can't implement `StaticDataSize`
 #[derive(DataSize)]
-struct TestDynamicStruct {
+struct TestDynamicStruct<'a> {
 	value: u32,
 	wrapper: Option<Vec<i32>>,
 	enum_value: Vec<TestSizedEnum>,
+	s: &'a [u32],
 }
 
 #[derive(DataSize)]
@@ -60,8 +61,8 @@ enum TestEnumGenerics<T> {
 }
 
 #[derive(DataSize, StaticDataSize)]
-struct TestStructGenerics<T> {
-	value: T,
+struct TestStructGenerics<'a, T> {
+	value: &'a T,
 	wrapper: Option<T>,
 	enum_value: TestEnumGenerics<T>,
 }
@@ -136,8 +137,9 @@ fn test_dynamic_struct() {
 		value: u32::default(),
 		wrapper: Some(Vec::from([i32::default(), i32::default()])),
 		enum_value: Vec::from([TestSizedEnum::Unit]),
+		s: &[u32::default()],
 	};
-	assert_eq!(data.data_size(), 17);
+	assert_eq!(data.data_size(), 21);
 }
 
 #[test]
@@ -191,7 +193,7 @@ fn test_enum_with_dynamic_generics_named() {
 #[test]
 fn test_struct_with_sized_generics() {
 	let data = TestStructGenerics::<u16> {
-		value: u16::default(),
+		value: &u16::default(),
 		wrapper: None,
 		enum_value: TestEnumGenerics::Unit,
 	};
@@ -201,7 +203,7 @@ fn test_struct_with_sized_generics() {
 #[test]
 fn test_struct_with_dynamic_generics() {
 	let data = TestStructGenerics::<Vec<u8>> {
-		value: vec![u8::default()],
+		value: &vec![u8::default()],
 		wrapper: Some(vec![u8::default(); 2]),
 		enum_value: TestEnumGenerics::Unit,
 	};

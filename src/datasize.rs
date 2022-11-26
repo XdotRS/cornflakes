@@ -23,10 +23,10 @@ pub trait StaticDataSize {
 
 /// Simple macro for easely defining size for primitive types
 macro_rules! static_type_size {
-	($type:ty, $size:literal) => {
+	($type:ty) => {
 		impl StaticDataSize for $type {
 			fn static_data_size() -> usize {
-				$size
+				std::mem::size_of::<$type>()
 			}
 		}
 		impl DataSize for $type {
@@ -37,23 +37,51 @@ macro_rules! static_type_size {
 	};
 }
 
-static_type_size!(u8, 1);
-static_type_size!(i8, 1);
-static_type_size!(u16, 2);
-static_type_size!(i16, 2);
-static_type_size!(u32, 4);
-static_type_size!(i32, 4);
-static_type_size!(u64, 8);
-static_type_size!(i64, 8);
+static_type_size!(bool);
+static_type_size!(usize);
+static_type_size!(u8);
+static_type_size!(i8);
+static_type_size!(u16);
+static_type_size!(i16);
+static_type_size!(u32);
+static_type_size!(i32);
+static_type_size!(u64);
+static_type_size!(i64);
+static_type_size!(f32);
+static_type_size!(f64);
+static_type_size!(char);
 
-impl<T> DataSize for Vec<T>
-where
-	T: DataSize,
+impl<T: DataSize> DataSize for Vec<T>
 {
 	fn data_size(&self) -> usize {
 		self.iter()
 			.map(|v| v.data_size())
 			.fold(0, |acc, v| acc + v)
+	}
+}
+
+impl<T: DataSize> DataSize for &[T] {
+	fn data_size(&self) -> usize {
+		let size: &mut usize = &mut 0;
+	    for e in *self {
+			*size += e.data_size();
+	    };
+		*size
+	}
+}
+impl<T: DataSize> DataSize for [T] {
+	fn data_size(&self) -> usize {
+		let size: &mut usize = &mut 0;
+	    for e in self {
+			*size += e.data_size();
+	    };
+		*size
+	}
+}
+
+impl DataSize for &str {
+	fn data_size(&self) -> usize {
+	    self.len()
 	}
 }
 

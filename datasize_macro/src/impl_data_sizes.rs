@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream as TokenStream2;
-use quote::{format_ident, quote};
+use quote::{format_ident, quote, ToTokens};
 use syn::{Data, DataEnum, DataStruct, DeriveInput, Fields, Ident, Index, PathArguments, Type};
 
 pub fn impl_datasize(input: &DeriveInput) -> TokenStream2 {
@@ -114,17 +114,23 @@ fn impl_static_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 
 fn impl_static_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 	// Retrieve types of all fields
-	let types: Vec<_> = data_struct
+	let types: Vec<TokenStream2> = data_struct
 		.fields
 		.iter()
 		.map(|f| f.ty.to_owned())
-		.filter_map(|t| match t {
-			Type::Path(p) => Some(p),
-			_ => None,
-		})
-		// Replacing every paths segments angle brackets argument
+		.map(replace_type_syntax)
+		.collect();
+
+	// We call `static_data_size()` on each of the names
+	quote! ( usize::default() #(+ <#types>::static_data_size())*)
+}
+
+/// This replaces all types to a syntax on which we can call functions
+fn replace_type_syntax(t: Type) -> TokenStream2 {
+	match t {
+		// If it is a path type, we need to replace its arguments is there is some
 		// Basically tansforming every Type<T> into Type::<T>
-		.map(|p| {
+		Type::Path(p) => {
 			let idents: Vec<_> = p
 				.path
 				.segments
@@ -135,15 +141,39 @@ fn impl_static_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 					let PathArguments::AngleBracketed(arg) = &s.arguments else {
 								return quote!(#ident);
 							};
+					// TODO: Support recursive arguments (Things like Option<Thing<T>>)
 					quote!(#ident::#arg)
 				})
 				.collect();
 			quote!(#(#idents)*)
-		})
-		.collect();
-
-	// We call `static_data_size()` on each of the names
-	quote! ( usize::default() #(+ #types::static_data_size())*)
+		}
+		Type::Tuple(t) => {
+			let types: Vec<TokenStream2> = t
+				.elems
+				.iter()
+				.map(|t| replace_type_syntax(t.to_owned()))
+				.collect();
+			quote!((#(#types),*))
+		}
+		Type::Ptr(p) => {
+			let ty = replace_type_syntax(*p.elem);
+			quote!(#ty)
+		}
+		Type::Array(a) => {
+			let ty = replace_type_syntax(*a.elem);
+			quote!([#ty])
+		}
+		Type::Slice(s) => {
+			let ty = replace_type_syntax(*s.elem);
+			quote!([#ty])
+		}
+		Type::Reference(r) => {
+			let ty = replace_type_syntax(*r.elem);
+			quote!(#ty)
+		}
+		Type::Infer(i) => i.to_token_stream(),
+		_ => panic!("This type is not supported yet"),
+	}
 }
 
 pub fn retrieve_generics(input: &DeriveInput) -> Vec<Ident> {
@@ -152,4 +182,8 @@ pub fn retrieve_generics(input: &DeriveInput) -> Vec<Ident> {
 		.type_params()
 		.map(|t| t.ident.to_owned())
 		.collect()
+}
+
+pub fn retrieve_lifetimes(input: &DeriveInput) -> Vec<TokenStream2> {
+	input.generics.lifetimes().map(|_| quote!('_)).collect()
 }
