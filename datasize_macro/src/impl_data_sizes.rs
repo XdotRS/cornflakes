@@ -1,8 +1,6 @@
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{format_ident, quote};
-use syn::{
-	Data, DataEnum, DataStruct, DeriveInput, Fields, Ident, Index, PathArguments, Type,
-};
+use syn::{Data, DataEnum, DataStruct, DeriveInput, Fields, Ident, Index, PathArguments, Type};
 
 pub fn impl_datasize(input: &DeriveInput) -> TokenStream2 {
 	match &input.data {
@@ -146,4 +144,12 @@ fn impl_static_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 
 	// We call `static_data_size()` on each of the names
 	quote! ( usize::default() #(+ #types::static_data_size())*)
+}
+
+pub fn retrieve_generics(input: &DeriveInput) -> Vec<Ident> {
+	input
+		.generics
+		.type_params()
+		.map(|t| t.ident.to_owned())
+		.collect()
 }

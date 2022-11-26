@@ -58,38 +58,19 @@ enum TestEnumGenerics<T> {
 	Unnamed(T),
 	Named { field1: T, field2: T },
 }
+
 #[derive(DataSize, StaticDataSize)]
 struct TestStructGenerics<T> {
 	value: T,
 	wrapper: Option<T>,
 	enum_value: TestEnumGenerics<T>,
 }
+
 #[derive(DataSize, StaticDataSize)]
 struct TestTupleGenerics<T>(Option<T>, TestEnumGenerics<T>);
 
-// TODO: Under here is what the derive should generate for types with generics
-//       that implements both DataSize and StaticDataSize.
-//       Note that we need specialization for now, and this is a Nightly only feature.
-//
-// impl<T: DataSize> DataSize for TestSizedEnumGenerics<T> {
-// 	default fn data_size(&self) -> usize {
-// 		match &self {
-// 			TestSizedEnumGenerics::Unit => 0,
-// 			TestSizedEnumGenerics::Unnamed(a) => a.data_size(),
-// 			TestSizedEnumGenerics::Named { field1, field2 } => field1.data_size() + field2.data_size(),
-// 		}
-// 	}
-// }
-// impl<T: DataSize + StaticDataSize> DataSize for TestSizedEnumGenerics<T> {
-// 	fn data_size(&self) -> usize {
-// 		T::static_data_size()
-// 	}
-// }
-// impl<T: StaticDataSize> StaticDataSize for TestSizedEnumGenerics<T> {
-// 	fn static_data_size() -> usize {
-// 		T::static_data_size()
-// 	}
-// }
+
+// Tests
 
 #[test]
 fn test_sized_enum_unit() {
@@ -214,7 +195,7 @@ fn test_struct_with_sized_generics() {
 		wrapper: None,
 		enum_value: TestEnumGenerics::Unit,
 	};
-	assert_eq!(data.data_size(), 6);
+	assert_eq!(data.data_size(), 8);
 }
 
 #[test]
@@ -222,7 +203,7 @@ fn test_struct_with_dynamic_generics() {
 	let data = TestStructGenerics::<Vec<u8>> {
 		value: vec![u8::default()],
 		wrapper: Some(vec![u8::default(); 2]),
-		enum_value: vec![TestEnumGenerics::Unit],
+		enum_value: TestEnumGenerics::Unit,
 	};
 	assert_eq!(data.data_size(), 3);
 }
@@ -230,11 +211,11 @@ fn test_struct_with_dynamic_generics() {
 #[test]
 fn test_tuple_with_sized_generics() {
 	let data = TestTupleGenerics::<i8>(None, TestEnumGenerics::Unit);
-	assert_eq!(data.data_size(), 2);
+	assert_eq!(data.data_size(), 3);
 }
 
 #[test]
 fn test_tuple_with_dynamic_generics() {
-	let data = TestTupleGenerics::<Vec<i8>>(Some(vec![i8::default; 10]), TestEnumGenerics::Unit);
+	let data = TestTupleGenerics::<Vec<i8>>(Some(vec![i8::default(); 10]), TestEnumGenerics::Unit);
 	assert_eq!(data.data_size(), 10);
 }

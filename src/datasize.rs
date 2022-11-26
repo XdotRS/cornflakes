@@ -72,9 +72,7 @@ impl<T: DataSize + StaticDataSize> DataSize for Option<T>
 		Self::static_data_size()
 	}
 }
-impl<T> StaticDataSize for Option<T>
-where
-	T: StaticDataSize,
+impl<T: StaticDataSize> StaticDataSize for Option<T>
 {
 	fn static_data_size() -> usize {
 	    T::static_data_size()
