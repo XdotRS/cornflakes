@@ -7,7 +7,7 @@
 #![feature(specialization)]
 
 use cornflakes::{
-	datasize::derive::{DataSize, StaticDataSize},
+	derive::{DataSize, StaticDataSize},
 	DataSize, StaticDataSize,
 };
 

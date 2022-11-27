@@ -4,10 +4,6 @@
 
 use crate::{DataSize, StaticDataSize};
 
-pub mod derive {
-	pub use datasize_macro::{DataSize, StaticDataSize};
-}
-
 // Implementations for primitive types used in xrb
 
 /// Simple macro for easely defining size for primitive types
