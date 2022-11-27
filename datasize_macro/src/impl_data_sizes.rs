@@ -128,25 +128,6 @@ fn impl_static_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 /// This replaces all types to a syntax on which we can call functions
 fn replace_type_syntax(t: Type) -> TokenStream2 {
 	match t {
-		// If it is a path type, we need to replace its arguments is there is some
-		// Basically tansforming every Type<T> into Type::<T>
-		Type::Path(p) => {
-			let idents: Vec<_> = p
-				.path
-				.segments
-				.iter()
-				.map(|s| {
-					let ident = &s.ident;
-					// Only retain angle btracketed arguments
-					let PathArguments::AngleBracketed(arg) = &s.arguments else {
-								return quote!(#ident);
-							};
-					// TODO: Support recursive arguments (Things like Option<Thing<T>>)
-					quote!(#ident::#arg)
-				})
-				.collect();
-			quote!(#(#idents)*)
-		}
 		Type::Tuple(t) => {
 			let types: Vec<TokenStream2> = t
 				.elems
@@ -172,6 +153,7 @@ fn replace_type_syntax(t: Type) -> TokenStream2 {
 			quote!(#ty)
 		}
 		Type::Infer(i) => i.to_token_stream(),
+        Type::Path(p) => p.to_token_stream(),
 		_ => panic!("This type is not supported yet"),
 	}
 }
