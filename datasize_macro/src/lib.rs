@@ -29,7 +29,7 @@ pub fn derive_data_size(item: TokenStream) -> TokenStream {
 	};
 
 	let output = quote! {
-		impl<#(#generics: DataSize),*> cornflakes::datasize::DataSize for #ident #generics_and_lifetimes {
+		impl<#(#generics: cornflakes::DataSize),*> cornflakes::DataSize for #ident #generics_and_lifetimes {
 			default fn data_size(&self) -> usize {
 				#inner
 			}
@@ -57,12 +57,12 @@ pub fn derive_static_data_size(item: TokenStream) -> TokenStream {
 
 	// TODO: Move the implementation for `DataSize` to the appropriate derive macro
 	let output = quote! {
-		impl<#(#generics: StaticDataSize),*> cornflakes::datasize::StaticDataSize for #ident #generics_and_lifetimes {
+		impl<#(#generics: cornflakes::StaticDataSize),*> cornflakes::StaticDataSize for #ident #generics_and_lifetimes {
 			fn static_data_size() -> usize {
 				#inner
 			}
 		}
-		impl<#(#generics: StaticDataSize + DataSize),*> cornflakes::datasize::DataSize for #ident #generics_and_lifetimes {
+		impl<#(#generics: cornflakes::StaticDataSize + cornflakes::DataSize),*> cornflakes::DataSize for #ident #generics_and_lifetimes {
 			fn data_size(&self) -> usize {
 				Self::static_data_size()
 			}

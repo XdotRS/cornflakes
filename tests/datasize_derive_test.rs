@@ -6,8 +6,8 @@
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
-use cornflakes::datasize::{
-	derive::{DataSize, StaticDataSize},
+use cornflakes::{
+	datasize::derive::{DataSize, StaticDataSize},
 	DataSize, StaticDataSize,
 };
 

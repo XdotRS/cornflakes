@@ -25,11 +25,25 @@
 
 use std::error::Error;
 use bytes::{Buf, BufMut};
-use datasize::{DataSize, StaticDataSize};
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
 pub mod datasize;
+
+pub trait DataSize {
+	/// Returns the size of `self` in bytes when written with [`Writable`].
+	fn data_size(&self) -> usize;
+}
+
+pub trait StaticDataSize {
+	/// Returns the size of `Self` in bytes when written with [`Writable`].
+	///
+	/// If `Self` is an `enum`, then the size is the maximum size of the values
+	/// contained in the variants
+	fn static_data_size() -> usize
+	where
+		Self: Sized;
+}
 
 /// Reads a type from bytes.
 pub trait Readable {

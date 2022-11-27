@@ -20,7 +20,7 @@ pub fn impl_static_data_size(input: &DeriveInput) -> TokenStream2 {
 	match &input.data {
 		Data::Enum(e) => impl_static_datasize_enum(e),
 		Data::Struct(s) => impl_static_datasize_struct(s),
-		syn::Data::Union(_) => {
+		Data::Union(_) => {
 			panic!("Unions are used for C bindings, you probably don't need this trait for it");
 		}
 	}
@@ -30,29 +30,29 @@ fn impl_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 	let branches = data_enum
 		.variants
 		.iter()
-		.map(|v| {
-			let ident = &v.ident;
-			match &v.fields {
-				Fields::Named(f) => {
+		.map(|variant| {
+			let ident = &variant.ident;
+			match &variant.fields {
+				Fields::Named(field) => {
 					// Get a list of all named fields of a named variant
-					let names: Vec<Ident> =
-						f.named.iter().filter_map(|f| f.ident.to_owned()).collect();
-
-					quote! {
-						Self::#ident {#(#names),*} => { usize::default() #( + #names.data_size())*},
-					}
-				}
-				Fields::Unnamed(f) => {
-					// Set a name for all fields of an unnamed variant
-					let names: Vec<Ident> = f
-						.unnamed
+					let names: Vec<Ident> = field
+						.named
 						.iter()
-						.enumerate()
-						.map(|(i, _)| format_ident!("f{}", i))
+						.filter_map(|f| f.ident.to_owned())
 						.collect();
 
 					quote! {
-						Self::#ident (#(#names),*) => { usize::default() #( + #names.data_size())*},
+						Self::#ident {#(#names),*} => { 0usize #( + #names.data_size())*},
+					}
+				}
+				Fields::Unnamed(field) => {
+					// Set a name for all fields of an unnamed variant
+					let names: Vec<Ident> = (0..(field.unnamed.len()))
+						.map(|index| format_ident!("field{}", index))
+						.collect();
+
+					quote! {
+						Self::#ident (#(#names),*) => { 0usize #( + #names.data_size())*},
 					}
 				}
 				// If the variant is a unit variant, then the size is 0
@@ -61,7 +61,10 @@ fn impl_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 				},
 			}
 		})
-		.fold(quote!(), |t, b| quote! (#t #b));
+		.fold(
+			TokenStream2::new(),
+			|tokens, branch| quote! (#tokens #branch),
+		);
 
 	quote! {
 		match &self {
@@ -72,29 +75,30 @@ fn impl_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 
 fn impl_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 	match &data_struct.fields {
-		Fields::Named(f) => {
+		Fields::Named(field) => {
 			// Get a list of all named fields of a named variant
-			let names: Vec<Ident> = f.named.iter().filter_map(|f| f.ident.to_owned()).collect();
-
-			quote! {
-				usize::default() #(+ self.#names.data_size())*
-			}
-		}
-		Fields::Unnamed(f) => {
-			// Set a name for all fields of an unnamed variant
-			let names: Vec<Index> = f
-				.unnamed
+			let names: Vec<Ident> = field
+				.named
 				.iter()
-				.enumerate()
-				.map(|(i, _)| Index::from(i))
+				.filter_map(|f| f.ident.to_owned())
 				.collect();
 
 			quote! {
-				usize::default() #(+ self.#names.data_size())*
+				0usize #(+ self.#names.data_size())*
+			}
+		}
+		Fields::Unnamed(field) => {
+			// Set a name for all fields of an unnamed variant
+			let names: Vec<Index> = (0..(field.unnamed.len()))
+				.map(|index| Index::from(index))
+				.collect();
+
+			quote! {
+				0usize #(+ self.#names.data_size())*
 			}
 		}
 		// If the variant is a unit variant, then the size is 0
-		Fields::Unit => quote!(usize::default()),
+		Fields::Unit => quote!(0usize),
 	}
 }
 
@@ -102,17 +106,17 @@ fn impl_static_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 	data_enum
 		.variants
 		.iter()
-		.map(|v| {
+		.map(|variant| {
 			// Retrieve types for all fields
-			let types: Vec<Type> = v.fields.iter().map(|f| f.ty.to_owned()).collect();
+			let types: Vec<Type> = variant.fields.iter().map(|f| f.ty.to_owned()).collect();
 			quote! {
-				usize::default() #( + #types::static_data_size())*
+				0usize #( + #types::static_data_size())*
 			}
 		})
 		// Use the maximum size among all variants
 		.fold(
-			quote!(usize::default()),
-			|t, b| quote!(std::cmp::max(#t, #b)),
+			quote!(0usize),
+			|tokens, branch| quote!(std::cmp::max(#tokens, #branch)),
 		)
 }
 
@@ -121,39 +125,39 @@ fn impl_static_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 	let types: Vec<TokenStream2> = data_struct
 		.fields
 		.iter()
-		.map(|f| f.ty.to_owned())
+		.map(|field| field.ty.to_owned())
 		.map(replace_type_syntax)
 		.collect();
 
 	// We call `static_data_size()` on each of the names
-	quote! ( usize::default() #(+ <#types>::static_data_size())*)
+	quote! ( 0usize #(+ <#types>::static_data_size())*)
 }
 
 /// This replaces all types to a syntax on which we can call functions
-fn replace_type_syntax(t: Type) -> TokenStream2 {
-	match t {
-		Type::Tuple(t) => {
-			let types: Vec<TokenStream2> = t
+fn replace_type_syntax(r#type: Type) -> TokenStream2 {
+	match r#type {
+		Type::Tuple(tuple) => {
+			let types: Vec<TokenStream2> = tuple
 				.elems
 				.iter()
-				.map(|t| replace_type_syntax(t.to_owned()))
+				.map(|r#type| replace_type_syntax(r#type.to_owned()))
 				.collect();
 			quote!((#(#types),*))
 		}
-		Type::Ptr(p) => {
-			let ty = replace_type_syntax(*p.elem);
+		Type::Ptr(ptr) => {
+			let ty = replace_type_syntax(*ptr.elem);
 			quote!(#ty)
 		}
-		Type::Array(a) => {
-			let ty = replace_type_syntax(*a.elem);
+		Type::Array(array) => {
+			let ty = replace_type_syntax(*array.elem);
 			quote!([#ty])
 		}
-		Type::Slice(s) => {
-			let ty = replace_type_syntax(*s.elem);
+		Type::Slice(slice) => {
+			let ty = replace_type_syntax(*slice.elem);
 			quote!([#ty])
 		}
-		Type::Reference(r) => {
-			let ty = replace_type_syntax(*r.elem);
+		Type::Reference(reference) => {
+			let ty = replace_type_syntax(*reference.elem);
 			quote!(#ty)
 		}
 		Type::Infer(i) => i.to_token_stream(),
@@ -166,7 +170,7 @@ pub fn retrieve_generics(input: &DeriveInput) -> Vec<Ident> {
 	input
 		.generics
 		.type_params()
-		.map(|t| t.ident.to_owned())
+		.map(|r#type| r#type.ident.to_owned())
 		.collect()
 }
 

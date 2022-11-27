@@ -2,23 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use crate::{DataSize, StaticDataSize};
+
 pub mod derive {
 	pub use datasize_macro::{DataSize, StaticDataSize};
-}
-
-pub trait DataSize {
-	/// Returns the size of `self` in bytes when written with [`Writable`].
-	fn data_size(&self) -> usize;
-}
-
-pub trait StaticDataSize {
-	/// Returns the size of `Self` in bytes when written with [`Writable`].
-	///
-	/// If `Self` is an `enum`, then the size is the maximum size of the values
-	/// contained in the variants
-	fn static_data_size() -> usize
-	where
-		Self: Sized;
 }
 
 // Implementations for primitive types used in xrb
@@ -53,7 +40,7 @@ static_type_size!(f64);
 
 impl<T: DataSize> DataSize for Vec<T> {
 	fn data_size(&self) -> usize {
-		self.iter().map(|v| v.data_size()).fold(0, |acc, v| acc + v)
+		self.iter().map(|v| v.data_size()).sum()
 	}
 }
 
