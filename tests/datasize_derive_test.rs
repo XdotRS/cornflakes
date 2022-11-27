@@ -116,7 +116,7 @@ fn test_sized_tuple() {
 #[test]
 fn test_dynamic_enum_unit() {
 	let data = TestDynamicEnum::Unit;
-	assert_eq!(data.data_size(), 0);
+	assert_eq!(data.data_size(), 1);
 }
 
 #[test]
@@ -175,7 +175,7 @@ fn test_enum_with_sized_generics_named() {
 #[test]
 fn test_enum_with_dynamic_generics_unit() {
 	let data = TestEnumGenerics::<Vec<u32>>::Unit;
-	assert_eq!(data.data_size(), 0);
+	assert_eq!(data.data_size(), 1);
 }
 
 #[test]
@@ -210,7 +210,7 @@ fn test_struct_with_dynamic_generics() {
 		wrapper: Some(vec![u8::default(); 2]),
 		enum_value: TestEnumGenerics::Unit,
 	};
-	assert_eq!(data.data_size(), 3);
+	assert_eq!(data.data_size(), 4);
 }
 
 #[test]
@@ -222,5 +222,5 @@ fn test_tuple_with_sized_generics() {
 #[test]
 fn test_tuple_with_dynamic_generics() {
 	let data = TestTupleGenerics::<Vec<i8>>(Some(vec![i8::default(); 10]), TestEnumGenerics::Unit);
-	assert_eq!(data.data_size(), 10);
+	assert_eq!(data.data_size(), 11);
 }

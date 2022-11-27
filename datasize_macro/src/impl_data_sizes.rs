@@ -55,9 +55,9 @@ fn impl_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 						Self::#ident (#(#names),*) => { 0usize #( + #names.data_size())*},
 					}
 				}
-				// If the variant is a unit variant, then the size is 0
+				// If the variant is a unit variant, then the size is 1 (size of it's discriminant)
 				Fields::Unit => quote! {
-					Self::#ident => 0,
+					Self::#ident => 1,
 				},
 			}
 		})

@@ -72,7 +72,7 @@ impl DataSize for &str {
 impl<T: DataSize> DataSize for Option<T> {
 	default fn data_size(&self) -> usize {
 		match &self {
-			Option::None => 0,
+			Option::None => 1,
 			Option::Some(v) => v.data_size(),
 		}
 	}
