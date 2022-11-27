@@ -35,10 +35,10 @@ fn impl_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 			match &variant.fields {
 				Fields::Named(field) => {
 					// Get a list of all named fields of a named variant
-					let names: Vec<Ident> = field
+					let names: Vec<&Ident> = field
 						.named
 						.iter()
-						.filter_map(|f| f.ident.to_owned())
+						.filter_map(|f| f.ident.as_ref())
 						.collect();
 
 					quote! {
@@ -77,10 +77,10 @@ fn impl_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 	match &data_struct.fields {
 		Fields::Named(field) => {
 			// Get a list of all named fields of a named variant
-			let names: Vec<Ident> = field
+			let names: Vec<&Ident> = field
 				.named
 				.iter()
-				.filter_map(|f| f.ident.to_owned())
+				.filter_map(|f| f.ident.as_ref())
 				.collect();
 
 			quote! {
@@ -108,7 +108,7 @@ fn impl_static_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 		.iter()
 		.map(|variant| {
 			// Retrieve types for all fields
-			let types: Vec<Type> = variant.fields.iter().map(|f| f.ty.to_owned()).collect();
+			let types: Vec<&Type> = variant.fields.iter().map(|f| &f.ty).collect();
 			quote! {
 				0usize #( + #types::static_data_size())*
 			}
@@ -125,7 +125,7 @@ fn impl_static_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 	let types: Vec<TokenStream2> = data_struct
 		.fields
 		.iter()
-		.map(|field| field.ty.to_owned())
+		.map(|field| &field.ty)
 		.map(replace_type_syntax)
 		.collect();
 
@@ -134,30 +134,30 @@ fn impl_static_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 }
 
 /// This replaces all types to a syntax on which we can call functions
-fn replace_type_syntax(r#type: Type) -> TokenStream2 {
+fn replace_type_syntax(r#type: &Type) -> TokenStream2 {
 	match r#type {
 		Type::Tuple(tuple) => {
 			let types: Vec<TokenStream2> = tuple
 				.elems
 				.iter()
-				.map(|r#type| replace_type_syntax(r#type.to_owned()))
+				.map(|r#type| replace_type_syntax(&r#type))
 				.collect();
 			quote!((#(#types),*))
 		}
 		Type::Ptr(ptr) => {
-			let ty = replace_type_syntax(*ptr.elem);
+			let ty = replace_type_syntax(&ptr.elem);
 			quote!(#ty)
 		}
 		Type::Array(array) => {
-			let ty = replace_type_syntax(*array.elem);
+			let ty = replace_type_syntax(&array.elem);
 			quote!([#ty])
 		}
 		Type::Slice(slice) => {
-			let ty = replace_type_syntax(*slice.elem);
+			let ty = replace_type_syntax(&slice.elem);
 			quote!([#ty])
 		}
 		Type::Reference(reference) => {
-			let ty = replace_type_syntax(*reference.elem);
+			let ty = replace_type_syntax(&reference.elem);
 			quote!(#ty)
 		}
 		Type::Infer(i) => i.to_token_stream(),
