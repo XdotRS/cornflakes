@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{format_ident, quote, ToTokens};
-use syn::{Data, DataEnum, DataStruct, DeriveInput, Fields, Ident, Index, PathArguments, Type};
+use syn::{Data, DataEnum, DataStruct, DeriveInput, Fields, Ident, Index, Type};
 
 pub fn impl_datasize(input: &DeriveInput) -> TokenStream2 {
 	match &input.data {
@@ -153,7 +153,7 @@ fn replace_type_syntax(t: Type) -> TokenStream2 {
 			quote!(#ty)
 		}
 		Type::Infer(i) => i.to_token_stream(),
-        Type::Path(p) => p.to_token_stream(),
+		Type::Path(p) => p.to_token_stream(),
 		_ => panic!("This type is not supported yet"),
 	}
 }

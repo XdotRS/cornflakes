@@ -16,7 +16,9 @@ pub trait StaticDataSize {
 	///
 	/// If `Self` is an `enum`, then the size is the maximum size of the values
 	/// contained in the variants
-	fn static_data_size() -> usize where Self: Sized;
+	fn static_data_size() -> usize
+	where
+		Self: Sized;
 }
 
 // Implementations for primitive types used in xrb
@@ -38,7 +40,6 @@ macro_rules! static_type_size {
 }
 
 static_type_size!(bool);
-static_type_size!(usize);
 static_type_size!(u8);
 static_type_size!(i8);
 static_type_size!(u16);
@@ -49,44 +50,39 @@ static_type_size!(u64);
 static_type_size!(i64);
 static_type_size!(f32);
 static_type_size!(f64);
-static_type_size!(char);
 
-impl<T: DataSize> DataSize for Vec<T>
-{
+impl<T: DataSize> DataSize for Vec<T> {
 	fn data_size(&self) -> usize {
-		self.iter()
-			.map(|v| v.data_size())
-			.fold(0, |acc, v| acc + v)
+		self.iter().map(|v| v.data_size()).fold(0, |acc, v| acc + v)
 	}
 }
 
 impl<T: DataSize> DataSize for &[T] {
 	fn data_size(&self) -> usize {
 		let size: &mut usize = &mut 0;
-	    for e in *self {
+		for e in *self {
 			*size += e.data_size();
-	    };
+		}
 		*size
 	}
 }
 impl<T: DataSize> DataSize for [T] {
 	fn data_size(&self) -> usize {
 		let size: &mut usize = &mut 0;
-	    for e in self {
+		for e in self {
 			*size += e.data_size();
-	    };
+		}
 		*size
 	}
 }
 
 impl DataSize for &str {
 	fn data_size(&self) -> usize {
-	    self.len()
+		self.len()
 	}
 }
 
-impl<T: DataSize> DataSize for Option<T>
-{
+impl<T: DataSize> DataSize for Option<T> {
 	default fn data_size(&self) -> usize {
 		match &self {
 			Option::None => 0,
@@ -94,22 +90,20 @@ impl<T: DataSize> DataSize for Option<T>
 		}
 	}
 }
-impl<T: DataSize + StaticDataSize> DataSize for Option<T>
-{
+impl<T: DataSize + StaticDataSize> DataSize for Option<T> {
 	fn data_size(&self) -> usize {
 		Self::static_data_size()
 	}
 }
-impl<T: StaticDataSize> StaticDataSize for Option<T>
-{
+impl<T: StaticDataSize> StaticDataSize for Option<T> {
 	fn static_data_size() -> usize {
-	    T::static_data_size()
+		T::static_data_size()
 	}
 }
 
 #[cfg(test)]
 mod test {
-    use super::DataSize;
+	use super::DataSize;
 
 	#[test]
 	fn test_datasize_vec() {

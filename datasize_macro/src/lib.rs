@@ -31,7 +31,6 @@ pub fn derive_data_size(item: TokenStream) -> TokenStream {
 			}
 		}
 	};
-	dbg!(&output.to_string());
 	output.into()
 }
 
@@ -65,6 +64,5 @@ pub fn derive_static_data_size(item: TokenStream) -> TokenStream {
 			}
 		}
 	};
-	dbg!(&output.to_string());
 	output.into()
 }

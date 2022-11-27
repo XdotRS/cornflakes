@@ -70,7 +70,6 @@ struct TestStructGenerics<'a, T> {
 #[derive(DataSize, StaticDataSize)]
 struct TestTupleGenerics<T>(Option<T>, TestEnumGenerics<T>);
 
-
 // Tests
 
 #[test]
