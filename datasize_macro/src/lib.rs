@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use impl_data_sizes::{
-	impl_datasize, impl_static_data_size, retrieve_generics, retrieve_lifetimes,
+	impl_datasize, impl_static_data_size, retrieve_generics_with_anonymous_lifetimes, retrieve_type_generics,
 };
 use proc_macro::TokenStream;
 use quote::quote;
@@ -17,19 +17,11 @@ pub fn derive_data_size(item: TokenStream) -> TokenStream {
 	let ident = &input.ident;
 	let inner = impl_datasize(&input);
 
-	// Parsing generics and lifetimes
-	let generics = retrieve_generics(&input);
-	let lifetimes = retrieve_lifetimes(&input);
-	// Here we check if there is any lifetime AND generics
-	// if there is both, we need a comma to separate them
-	let generics_and_lifetimes = if generics.len() > 0 && lifetimes.len() > 0 {
-		quote!(<#(#lifetimes),*, #(#generics)*>)
-	} else {
-		quote!(<#(#lifetimes),* #(#generics)*>)
-	};
+	let generics = retrieve_type_generics(&input);
+	let generics_and_anonymous_lifetimes = retrieve_generics_with_anonymous_lifetimes(&input);
 
 	let output = quote! {
-		impl<#(#generics: cornflakes::DataSize),*> cornflakes::DataSize for #ident #generics_and_lifetimes {
+		impl<#(#generics: cornflakes::DataSize),*> cornflakes::DataSize for #ident <#(#generics_and_anonymous_lifetimes),*> {
 			default fn data_size(&self) -> usize {
 				#inner
 			}
@@ -44,25 +36,17 @@ pub fn derive_static_data_size(item: TokenStream) -> TokenStream {
 	let ident = &input.ident;
 	let inner = impl_static_data_size(&input);
 
-	// Parsing generics and lifetimes
-	let generics = retrieve_generics(&input);
-	let lifetimes = retrieve_lifetimes(&input);
-	// Here we check if there is any lifetime AND generics
-	// if there is both, we need a comma to separate them
-	let generics_and_lifetimes = if generics.len() > 0 && lifetimes.len() > 0 {
-		quote!(<#(#lifetimes),*, #(#generics)*>)
-	} else {
-		quote!(<#(#lifetimes),* #(#generics)*>)
-	};
+	let generics = retrieve_type_generics(&input);
+	let generics_and_anonymous_lifetimes = retrieve_generics_with_anonymous_lifetimes(&input);
 
 	// TODO: Move the implementation for `DataSize` to the appropriate derive macro
 	let output = quote! {
-		impl<#(#generics: cornflakes::StaticDataSize),*> cornflakes::StaticDataSize for #ident #generics_and_lifetimes {
+		impl<#(#generics: cornflakes::StaticDataSize),*> cornflakes::StaticDataSize for #ident <#(#generics_and_anonymous_lifetimes),*> {
 			fn static_data_size() -> usize {
 				#inner
 			}
 		}
-		impl<#(#generics: cornflakes::StaticDataSize + cornflakes::DataSize),*> cornflakes::DataSize for #ident #generics_and_lifetimes {
+		impl<#(#generics: cornflakes::StaticDataSize + cornflakes::DataSize),*> cornflakes::DataSize for #ident <#(#generics_and_anonymous_lifetimes),*> {
 			fn data_size(&self) -> usize {
 				Self::static_data_size()
 			}

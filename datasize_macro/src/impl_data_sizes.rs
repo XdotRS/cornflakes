@@ -166,14 +166,24 @@ fn replace_type_syntax(r#type: Type) -> TokenStream2 {
 	}
 }
 
-pub fn retrieve_generics(input: &DeriveInput) -> Vec<Ident> {
+/// Get all renerics idents
+pub fn retrieve_type_generics(input: &DeriveInput) -> Vec<Ident> {
 	input
 		.generics
 		.type_params()
 		.map(|r#type| r#type.ident.to_owned())
 		.collect()
 }
-
-pub fn retrieve_lifetimes(input: &DeriveInput) -> Vec<TokenStream2> {
-	input.generics.lifetimes().map(|_| quote!('_)).collect()
+/// Get all generics, but replaces lifetimes with anonymous lifetimes
+pub fn retrieve_generics_with_anonymous_lifetimes(input: &DeriveInput) -> Vec<TokenStream2> {
+	input
+		.generics
+		.params
+		.iter()
+		.filter_map(|generics| match generics {
+			syn::GenericParam::Type(t) => Some(t.to_token_stream()),
+			syn::GenericParam::Lifetime(_) => Some(quote!('_)),
+			syn::GenericParam::Const(_) => None,
+		})
+		.collect()
 }
