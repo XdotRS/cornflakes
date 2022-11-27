@@ -88,6 +88,25 @@ impl<T: StaticDataSize> StaticDataSize for Option<T> {
 	}
 }
 
+// Size for references will be the same as the owned type.
+// We don't need to implement DataSize for references because
+// of auto-dereferencing at runtime.
+impl<T: StaticDataSize> StaticDataSize for &T {
+	fn static_data_size() -> usize {
+		<T>::static_data_size()
+	}
+}
+impl<T: StaticDataSize> StaticDataSize for &mut T {
+	fn static_data_size() -> usize {
+		<T>::static_data_size()
+	}
+}
+impl<T: StaticDataSize> StaticDataSize for Box<T> {
+	fn static_data_size() -> usize {
+		<T>::static_data_size()
+	}
+}
+
 #[cfg(test)]
 mod test {
 	use super::DataSize;

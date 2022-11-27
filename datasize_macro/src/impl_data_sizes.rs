@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use proc_macro2::TokenStream as TokenStream2;
-use quote::{format_ident, quote, ToTokens};
+use quote::{format_ident, quote};
 use syn::{Data, DataEnum, DataStruct, DeriveInput, Fields, Ident, Index, Type};
 
 pub fn impl_datasize(input: &DeriveInput) -> TokenStream2 {
@@ -122,46 +122,8 @@ fn impl_static_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 
 fn impl_static_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 	// Retrieve types of all fields
-	let types: Vec<TokenStream2> = data_struct
-		.fields
-		.iter()
-		.map(|field| &field.ty)
-		.map(replace_type_syntax)
-		.collect();
+	let types: Vec<&Type> = data_struct.fields.iter().map(|field| &field.ty).collect();
 
 	// We call `static_data_size()` on each of the names
 	quote! ( 0usize #(+ <#types>::static_data_size())*)
-}
-
-/// This replaces all types to a syntax on which we can call functions
-fn replace_type_syntax(r#type: &Type) -> TokenStream2 {
-	match r#type {
-		Type::Tuple(tuple) => {
-			let types: Vec<TokenStream2> = tuple
-				.elems
-				.iter()
-				.map(|r#type| replace_type_syntax(&r#type))
-				.collect();
-			quote!((#(#types),*))
-		}
-		Type::Ptr(ptr) => {
-			let ty = replace_type_syntax(&ptr.elem);
-			quote!(#ty)
-		}
-		Type::Array(array) => {
-			let ty = replace_type_syntax(&array.elem);
-			quote!([#ty])
-		}
-		Type::Slice(slice) => {
-			let ty = replace_type_syntax(&slice.elem);
-			quote!([#ty])
-		}
-		Type::Reference(reference) => {
-			let ty = replace_type_syntax(&reference.elem);
-			quote!(#ty)
-		}
-		Type::Infer(i) => i.to_token_stream(),
-		Type::Path(p) => p.to_token_stream(),
-		_ => panic!("This type is not supported yet"),
-	}
 }

@@ -65,7 +65,7 @@ enum TestEnumGenerics<T> {
 }
 
 #[derive(DataSize, StaticDataSize)]
-struct TestStructGenerics<'a, T> {
+struct TestStructGenerics<'a, T: 'a> {
 	value: &'a T,
 	wrapper: Option<T>,
 	enum_value: TestEnumGenerics<Option<T>>,
