@@ -76,7 +76,7 @@ fn impl_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 fn impl_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 	match &data_struct.fields {
 		Fields::Named(field) => {
-			// Get a list of all named fields of a named variant
+			// Get a list of all named fields
 			let names: Vec<&Ident> = field
 				.named
 				.iter()

@@ -17,8 +17,8 @@ pub fn derive_data_size(item: TokenStream) -> TokenStream {
 	let ident = &input.ident;
 	let inner = impl_datasize(&input);
 
-	input.generics.type_params_mut().for_each(|t| {
-		t.bounds.push(parse_quote!(cornflakes::DataSize));
+	input.generics.type_params_mut().for_each(|param| {
+		param.bounds.push(parse_quote!(cornflakes::DataSize));
 	});
 	let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
 
@@ -38,8 +38,8 @@ pub fn derive_static_data_size(item: TokenStream) -> TokenStream {
 	let ident = &input.ident;
 	let inner = impl_static_data_size(&input);
 
-	input.generics.type_params_mut().for_each(|t| {
-		t.bounds.push(parse_quote!(cornflakes::StaticDataSize));
+	input.generics.type_params_mut().for_each(|param| {
+		param.bounds.push(parse_quote!(cornflakes::StaticDataSize));
 	});
 	let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
 
@@ -53,8 +53,8 @@ pub fn derive_static_data_size(item: TokenStream) -> TokenStream {
 
 	// For specialization to work, we need an additionnal trait bound for Datasize
 	// that we couldn't add before
-	input.generics.type_params_mut().for_each(|t| {
-		t.bounds.push(parse_quote!(cornflakes::DataSize));
+	input.generics.type_params_mut().for_each(|param| {
+		param.bounds.push(parse_quote!(cornflakes::DataSize));
 	});
 	let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
 
