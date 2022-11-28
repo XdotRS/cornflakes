@@ -49,6 +49,7 @@ impl<T: DataSize> DataSize for &[T] {
 		*size
 	}
 }
+
 impl<T: DataSize> DataSize for [T] {
 	fn data_size(&self) -> usize {
 		let size: &mut usize = &mut 0;
@@ -68,16 +69,18 @@ impl DataSize for &str {
 impl<T: DataSize> DataSize for Option<T> {
 	default fn data_size(&self) -> usize {
 		match &self {
-			Option::None => 1,
-			Option::Some(v) => v.data_size(),
+			None => 1,
+			Some(v) => v.data_size(),
 		}
 	}
 }
+
 impl<T: DataSize + StaticDataSize> DataSize for Option<T> {
 	fn data_size(&self) -> usize {
 		Self::static_data_size()
 	}
 }
+
 impl<T: StaticDataSize> StaticDataSize for Option<T> {
 	fn static_data_size() -> usize {
 		T::static_data_size()
@@ -92,11 +95,13 @@ impl<T: StaticDataSize> StaticDataSize for &T {
 		<T>::static_data_size()
 	}
 }
+
 impl<T: StaticDataSize> StaticDataSize for &mut T {
 	fn static_data_size() -> usize {
 		<T>::static_data_size()
 	}
 }
+
 impl<T: StaticDataSize> StaticDataSize for Box<T> {
 	fn static_data_size() -> usize {
 		<T>::static_data_size()

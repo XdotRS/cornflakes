@@ -5,7 +5,6 @@
 // We need specialization to implement DataSize for Wrapper types like Option<T>
 #![allow(incomplete_features)]
 #![feature(specialization)]
-
 // Deny the following clippy lints to enforce them:
 #![deny(clippy::complexity)]
 #![deny(clippy::correctness)]
@@ -52,7 +51,9 @@ pub mod derive {
 	pub use datasize_macro::{DataSize, StaticDataSize};
 }
 
-pub mod datasize;
+mod datasize;
+mod writable;
+mod readable;
 
 pub trait DataSize {
 	/// Returns the size of `self` in bytes when written with [`Writable`].
@@ -96,9 +97,7 @@ pub trait ContextualReadable {
 /// Allows a type to be written as bytes.
 pub trait Writable {
 	/// Writes [`self`](Self) as bytes to a [`BufMut`].
-	fn write_to(&self, writer: &mut impl BufMut) -> WriteResult
-	where
-		Self: Sized;
+	fn write_to(&self, writer: &mut impl BufMut) -> WriteResult;
 }
 
 // This function is unused, but writing it here asserts that these traits are
@@ -110,6 +109,6 @@ fn _assert_object_safety(
 	_static_data_size: &dyn StaticDataSize,
 	_readable: &dyn Readable,
 	_contextual_readable: &dyn ContextualReadable<Context = ()>,
-	_writable: &dyn Writable,
+	//_writable: &dyn Writable,
 ) {
 }

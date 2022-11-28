@@ -4,11 +4,11 @@
 
 [package]
 name = "cornflakes"
-version = "0.0.1"
+version = "0.0.2"
 readme = false
 repository = "https://github.com/XdotRS/cornflakes"
 documentation = "https://docs.aquariwm.org/doc/cornflakes"
-authors = ["X.RS", "Antikyth <antikyth at gmail dot com>"]
+authors = ["X.RS", "Antikyth <antikyth at gmail dot com>", "Syudagye"]
 edition = "2021"
 description = "Utilities for (de)serialization in XRB."
 license = "MPL-2.0"
