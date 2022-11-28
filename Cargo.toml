@@ -4,7 +4,7 @@
 
 [package]
 name = "cornflakes"
-version = "0.0.2"
+version = "0.0.3"
 readme = false
 repository = "https://github.com/XdotRS/cornflakes"
 documentation = "https://docs.aquariwm.org/doc/cornflakes"
