@@ -2,6 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+// We need specialization to implement DataSize for Wrapper types like Option<T>
+#![allow(incomplete_features)]
+#![feature(specialization)]
+
 // Deny the following clippy lints to enforce them:
 #![deny(clippy::complexity)]
 #![deny(clippy::correctness)]
@@ -44,9 +48,25 @@ pub enum WriteError {
 	Other(Box<dyn Error>),
 }
 
+pub mod derive {
+	pub use datasize_macro::{DataSize, StaticDataSize};
+}
+
+pub mod datasize;
+
 pub trait DataSize {
 	/// Returns the size of `self` in bytes when written with [`Writable`].
 	fn data_size(&self) -> usize;
+}
+
+pub trait StaticDataSize {
+	/// Returns the size of `Self` in bytes when written with [`Writable`].
+	///
+	/// If `Self` is an `enum`, then the size is the maximum size of the values
+	/// contained in the variants
+	fn static_data_size() -> usize
+	where
+		Self: Sized;
 }
 
 /// Reads a type from bytes.
@@ -87,6 +107,7 @@ pub trait Writable {
 // cannot be used with the `dyn` keyword.
 fn _assert_object_safety(
 	_data_size: &dyn DataSize,
+	_static_data_size: &dyn StaticDataSize,
 	_readable: &dyn Readable,
 	_contextual_readable: &dyn ContextualReadable<Context = ()>,
 	_writable: &dyn Writable,
