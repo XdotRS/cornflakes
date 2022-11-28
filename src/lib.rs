@@ -48,12 +48,12 @@ pub enum WriteError {
 }
 
 pub mod derive {
-	pub use datasize_macro::{DataSize, StaticDataSize};
+	pub use cornflakes_datasize_macro::{DataSize, StaticDataSize};
 }
 
 mod datasize;
-mod writable;
 mod readable;
+mod writable;
 
 pub trait DataSize {
 	/// Returns the size of `self` in bytes when written with [`Writable`].

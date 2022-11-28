@@ -18,4 +18,4 @@ categories = ["encoding"]
 [dependencies]
 thiserror = "1.0"
 bytes = "1.2"
-datasize_macro = { path = "./datasize_macro" }
+cornflakes_datasize_macro = { path = "./datasize_macro", version = "0.0.1" }
