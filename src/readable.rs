@@ -3,11 +3,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 macro_rules! implement {
-	($($ty:ty => Buf::$fun:ident()),*$(,)?) => {
+	($($ty:ty => $expr:expr),*$(,)?) => {
 		$(
 			impl $crate::Readable for $ty {
 				fn read_from(reader: &mut impl bytes::Buf) -> Result<Self, $crate::ReadError> {
-					Ok(reader.$fun())
+					Ok($expr)
 				}
 			}
 		)*
@@ -15,15 +15,17 @@ macro_rules! implement {
 }
 
 implement! {
-	i8 => Buf::get_i8(),
-	i16 => Buf::get_i16(),
-	i32 => Buf::get_i32(),
-	i64 => Buf::get_i64(),
-	i128 => Buf::get_i128(),
+	i8 => reader.get_i8(),
+	i16 => reader.get_i16(),
+	i32 => reader.get_i32(),
+	i64 => reader.get_i64(),
+	i128 => reader.get_i128(),
 
-	u8 => Buf::get_u8(),
-	u16 => Buf::get_u16(),
-	u32 => Buf::get_u32(),
-	u64 => Buf::get_u64(),
-	u128 => Buf::get_u128(),
+	u8 => reader.get_u8(),
+	u16 => reader.get_u16(),
+	u32 => reader.get_u32(),
+	u64 => reader.get_u64(),
+	u128 => reader.get_u128(),
+
+	bool => reader.get_u8() != 0,
 }
