@@ -2,6 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use crate::{ContextualReadable, ReadError, ReadResult, Readable};
+use bytes::Buf;
+
 macro_rules! implement {
 	($($reader:ident, $ty:ty => $expr:expr),*$(,)?) => {
 		$(
@@ -27,5 +30,52 @@ implement! {
 	reader, u64 => reader.get_u64(),
 	reader, u128 => reader.get_u128(),
 
+	reader, f32 => reader.get_f32(),
+	reader, f64 => reader.get_f64(),
+
 	reader, bool => reader.get_u8() != 0,
+}
+
+impl<T: Readable, const N: usize> Readable for [T; N] {
+	fn read_from(reader: &mut impl Buf) -> ReadResult<Self>
+	where
+		Self: Sized,
+	{
+		let mut vec = Vec::new();
+
+		for _ in 0..N {
+			vec.push(T::read_from(reader)?);
+		}
+
+		Ok(match vec.try_into() {
+			Ok(array) => array,
+			Err(_) => unreachable!("we know the length of this vec is `N`"),
+		})
+	}
+}
+
+impl<T: Readable> Readable for Box<T> {
+	fn read_from(reader: &mut impl Buf) -> ReadResult<Self>
+	where
+		Self: Sized,
+	{
+		Ok(Box::new(T::read_from(reader)?))
+	}
+}
+
+impl<T: Readable> ContextualReadable for Vec<T> {
+	type Context = usize;
+
+	fn read_with(reader: &mut impl Buf, context: &Self::Context) -> ReadResult<Self>
+	where
+		Self: Sized,
+	{
+		let mut vec = Vec::new();
+
+		for _ in 0..*context {
+			vec.push(T::read_from(reader)?);
+		}
+
+		Ok(vec)
+	}
 }
