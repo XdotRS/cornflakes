@@ -110,7 +110,7 @@ fn impl_static_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 			// Retrieve types for all fields
 			let types: Vec<&Type> = variant.fields.iter().map(|f| &f.ty).collect();
 			quote! {
-				0usize #( + #types::static_data_size())*
+				0usize #( + <#types>::static_data_size())*
 			}
 		})
 		// Use the maximum size among all variants
