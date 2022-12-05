@@ -48,7 +48,7 @@ pub enum WriteError {
 }
 
 pub mod derive {
-	pub use cornflakes_datasize_macro::{DataSize, StaticDataSize};
+	pub use cornflakes_datasize_macro::{DataSize, Readable, StaticDataSize};
 }
 
 mod datasize;

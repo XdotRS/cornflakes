@@ -68,3 +68,8 @@ pub fn derive_static_data_size(item: TokenStream) -> TokenStream {
 	};
 	output.into()
 }
+
+#[proc_macro_derive(Readable)]
+pub fn derive_readable(item: TokenStream) -> TokenStream {
+	quote!().into()
+}
