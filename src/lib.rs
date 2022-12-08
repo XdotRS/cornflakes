@@ -60,7 +60,7 @@ pub trait DataSize {
 	fn data_size(&self) -> usize;
 }
 
-pub trait StaticDataSize {
+pub trait StaticDataSize: DataSize {
 	/// Returns the size of `Self` in bytes when written with [`Writable`].
 	///
 	/// If `Self` is an `enum`, then the size is the maximum size of the values
@@ -71,7 +71,7 @@ pub trait StaticDataSize {
 }
 
 /// Reads a type from bytes.
-pub trait Readable {
+pub trait Readable: DataSize {
 	/// Reads [`Self`] from a [`Buf`] of bytes.
 	fn read_from(reader: &mut impl Buf) -> ReadResult<Self>
 	where
@@ -80,7 +80,7 @@ pub trait Readable {
 
 /// Allows the reading of a type from bytes given some additional
 /// [`Context`](Self::Context).
-pub trait ContextualReadable {
+pub trait ContextualReadable: DataSize {
 	/// The type of context with which this type can be read from bytes.
 	///
 	/// For example, this might be `usize` for some collection, where that
@@ -95,7 +95,7 @@ pub trait ContextualReadable {
 }
 
 /// Allows a type to be written as bytes.
-pub trait Writable {
+pub trait Writable: DataSize {
 	/// Writes [`self`](Self) as bytes to a [`BufMut`].
 	fn write_to(&self, writer: &mut impl BufMut) -> WriteResult;
 }
