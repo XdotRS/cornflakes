@@ -6,10 +6,7 @@
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
-use cornflakes::{
-	derive::{DataSize, StaticDataSize},
-	DataSize, StaticDataSize,
-};
+use cornflakes::derive::{DataSize, StaticDataSize};
 
 /// Here the size can be known at compile time
 ///
@@ -79,13 +76,13 @@ struct TestTupleGenerics<T>(Option<T>, TestEnumGenerics<T>);
 #[test]
 fn test_sized_enum_unit() {
 	let data = TestSizedEnum::Unit;
-	assert_eq!(data.data_size(), 5);
+	assert_eq!(<TestSizedEnum as cornflakes::DataSize>::data_size(&data), 5);
 }
 
 #[test]
 fn test_sized_enum_unnamed() {
 	let data = TestSizedEnum::Unnamed(u16::default());
-	assert_eq!(data.data_size(), 5);
+	assert_eq!(<TestSizedEnum as cornflakes::DataSize>::data_size(&data), 5);
 }
 
 #[test]
@@ -94,7 +91,7 @@ fn test_sized_enum_named() {
 		field1: u32::default(),
 		field2: i8::default(),
 	};
-	assert_eq!(data.data_size(), 5);
+	assert_eq!(<TestSizedEnum as cornflakes::DataSize>::data_size(&data), 5);
 }
 
 #[test]
@@ -104,25 +101,37 @@ fn test_sized_struct() {
 		wrapper: None,
 		enum_value: TestSizedEnum::Unit,
 	};
-	assert_eq!(data.data_size(), 17);
+	assert_eq!(
+		<TestSizedStruct as cornflakes::DataSize>::data_size(&data),
+		17
+	);
 }
 
 #[test]
 fn test_sized_tuple() {
 	let data = TestSizedTuple(u32::default(), None);
-	assert_eq!(data.data_size(), 12);
+	assert_eq!(
+		<TestSizedTuple as cornflakes::DataSize>::data_size(&data),
+		12
+	);
 }
 
 #[test]
 fn test_dynamic_enum_unit() {
 	let data = TestDynamicEnum::Unit;
-	assert_eq!(data.data_size(), 1);
+	assert_eq!(
+		<TestDynamicEnum as cornflakes::DataSize>::data_size(&data),
+		1
+	);
 }
 
 #[test]
 fn test_dynamic_enum_unnamed() {
 	let data = TestDynamicEnum::Unnamed(Vec::from([u8::default(), u8::default()]));
-	assert_eq!(data.data_size(), 2);
+	assert_eq!(
+		<TestDynamicEnum as cornflakes::DataSize>::data_size(&data),
+		2
+	);
 }
 
 #[test]
@@ -131,7 +140,10 @@ fn test_dynamic_enum_named() {
 		field1: u32::default(),
 		field2: vec![i16::default(); 10],
 	};
-	assert_eq!(data.data_size(), 24);
+	assert_eq!(
+		<TestDynamicEnum as cornflakes::DataSize>::data_size(&data),
+		24
+	);
 }
 
 #[test]
@@ -142,25 +154,37 @@ fn test_dynamic_struct() {
 		enum_value: Vec::from([TestSizedEnum::Unit]),
 		s: &[u32::default()],
 	};
-	assert_eq!(data.data_size(), 21);
+	assert_eq!(
+		<TestDynamicStruct as cornflakes::DataSize>::data_size(&data),
+		21
+	);
 }
 
 #[test]
 fn test_dynamic_tuple() {
 	let data = TestDynamicTuple(vec![None; 10], i64::default());
-	assert_eq!(data.data_size(), 88);
+	assert_eq!(
+		<TestDynamicTuple as cornflakes::DataSize>::data_size(&data),
+		88
+	);
 }
 
 #[test]
 fn test_enum_with_sized_generics_unit() {
 	let data = TestEnumGenerics::<u32>::Unit;
-	assert_eq!(data.data_size(), 8);
+	assert_eq!(
+		<TestEnumGenerics<u32> as cornflakes::DataSize>::data_size(&data),
+		8
+	);
 }
 
 #[test]
 fn test_enum_with_sized_generics_unnamed() {
 	let data = TestEnumGenerics::<u8>::Unnamed(u8::default());
-	assert_eq!(data.data_size(), 2);
+	assert_eq!(
+		<TestEnumGenerics<u8> as cornflakes::DataSize>::data_size(&data),
+		2
+	);
 }
 
 #[test]
@@ -169,19 +193,28 @@ fn test_enum_with_sized_generics_named() {
 		field1: i64::default(),
 		field2: i64::default(),
 	};
-	assert_eq!(data.data_size(), 16);
+	assert_eq!(
+		<TestEnumGenerics<i64> as cornflakes::DataSize>::data_size(&data),
+		16
+	);
 }
 
 #[test]
 fn test_enum_with_dynamic_generics_unit() {
 	let data = TestEnumGenerics::<Vec<u32>>::Unit;
-	assert_eq!(data.data_size(), 1);
+	assert_eq!(
+		<TestEnumGenerics<Vec<u32>> as cornflakes::DataSize>::data_size(&data),
+		1
+	);
 }
 
 #[test]
 fn test_enum_with_dynamic_generics_unnamed() {
 	let data = TestEnumGenerics::<Vec<u8>>::Unnamed(Vec::from([u8::default(), u8::default()]));
-	assert_eq!(data.data_size(), 2);
+	assert_eq!(
+		<TestEnumGenerics<Vec<u8>> as cornflakes::DataSize>::data_size(&data),
+		2
+	);
 }
 
 #[test]
@@ -190,7 +223,10 @@ fn test_enum_with_dynamic_generics_named() {
 		field1: vec![i64::default()],
 		field2: vec![i64::default(); 10],
 	};
-	assert_eq!(data.data_size(), 88);
+	assert_eq!(
+		<TestEnumGenerics<Vec<i64>> as cornflakes::DataSize>::data_size(&data),
+		88
+	);
 }
 
 #[test]
@@ -200,7 +236,10 @@ fn test_struct_with_sized_generics() {
 		wrapper: None,
 		enum_value: TestEnumGenerics::Unit,
 	};
-	assert_eq!(data.data_size(), 8);
+	assert_eq!(
+		<TestStructGenerics<u16> as cornflakes::DataSize>::data_size(&data),
+		8
+	);
 }
 
 #[test]
@@ -210,17 +249,26 @@ fn test_struct_with_dynamic_generics() {
 		wrapper: Some(vec![u8::default(); 2]),
 		enum_value: TestEnumGenerics::Unit,
 	};
-	assert_eq!(data.data_size(), 4);
+	assert_eq!(
+		<TestStructGenerics<Vec<u8>> as cornflakes::DataSize>::data_size(&data),
+		4
+	);
 }
 
 #[test]
 fn test_tuple_with_sized_generics() {
 	let data = TestTupleGenerics::<i8>(None, TestEnumGenerics::Unit);
-	assert_eq!(data.data_size(), 3);
+	assert_eq!(
+		<TestTupleGenerics<i8> as cornflakes::DataSize>::data_size(&data),
+		3
+	);
 }
 
 #[test]
 fn test_tuple_with_dynamic_generics() {
 	let data = TestTupleGenerics::<Vec<i8>>(Some(vec![i8::default(); 10]), TestEnumGenerics::Unit);
-	assert_eq!(data.data_size(), 11);
+	assert_eq!(
+		<TestTupleGenerics<Vec<i8>> as cornflakes::DataSize>::data_size(&data),
+		11
+	);
 }
