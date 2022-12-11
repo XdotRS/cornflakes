@@ -63,7 +63,6 @@ pub fn derive_static_data_size(item: TokenStream) -> TokenStream {
 		impl #impl_generics cornflakes::DataSize for #ident #type_generics #where_clause {
 			fn data_size(&self) -> usize {
 				<Self as cornflakes::StaticDataSize>::static_data_size()
-				// Self::static_data_size()
 			}
 		}
 	};
