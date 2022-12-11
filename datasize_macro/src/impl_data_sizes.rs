@@ -40,9 +40,14 @@ fn impl_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 						.iter()
 						.filter_map(|f| f.ident.as_ref())
 						.collect();
+					let types: Vec<&Type> = field
+						.named
+						.iter()
+						.map(|f| &f.ty)
+						.collect();
 
 					quote! {
-						Self::#ident {#(#names),*} => { 0usize #( + #names.data_size())*},
+						Self::#ident {#(#names),*} => { 0usize #( + <#types as cornflakes::DataSize>::data_size(&#names))*},
 					}
 				}
 				Fields::Unnamed(field) => {
@@ -50,9 +55,14 @@ fn impl_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 					let names: Vec<Ident> = (0..(field.unnamed.len()))
 						.map(|index| format_ident!("field{}", index))
 						.collect();
+					let types: Vec<&Type> = field
+						.unnamed
+						.iter()
+						.map(|f| &f.ty)
+						.collect();
 
 					quote! {
-						Self::#ident (#(#names),*) => { 0usize #( + #names.data_size())*},
+						Self::#ident (#(#names),*) => { 0usize #( + <#types as cornflakes::DataSize>::data_size(&#names))*},
 					}
 				}
 				// If the variant is a unit variant, then the size is 1 (size of it's discriminant)
@@ -82,9 +92,14 @@ fn impl_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 				.iter()
 				.filter_map(|f| f.ident.as_ref())
 				.collect();
+			let types: Vec<&Type> = field
+				.named
+				.iter()
+				.map(|f| &f.ty)
+				.collect();
 
 			quote! {
-				0usize #(+ self.#names.data_size())*
+				0usize #(+ <#types as cornflakes::DataSize>::data_size(&self.#names))*
 			}
 		}
 		Fields::Unnamed(field) => {
@@ -92,9 +107,14 @@ fn impl_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 			let names: Vec<Index> = (0..(field.unnamed.len()))
 				.map(|index| Index::from(index))
 				.collect();
+			let types: Vec<&Type> = field
+				.unnamed
+				.iter()
+				.map(|f| &f.ty)
+				.collect();
 
 			quote! {
-				0usize #(+ self.#names.data_size())*
+				0usize #(+ <#types as cornflakes::DataSize>::data_size(&self.#names))*
 			}
 		}
 		// If the variant is a unit variant, then the size is 0
@@ -110,7 +130,7 @@ fn impl_static_datasize_enum(data_enum: &DataEnum) -> TokenStream2 {
 			// Retrieve types for all fields
 			let types: Vec<&Type> = variant.fields.iter().map(|f| &f.ty).collect();
 			quote! {
-				0usize #( + <#types>::static_data_size())*
+				0usize #( + <#types as cornflakes::StaticDataSize>::static_data_size())*
 			}
 		})
 		// Use the maximum size among all variants
@@ -125,5 +145,5 @@ fn impl_static_datasize_struct(data_struct: &DataStruct) -> TokenStream2 {
 	let types: Vec<&Type> = data_struct.fields.iter().map(|field| &field.ty).collect();
 
 	// We call `static_data_size()` on each of the names
-	quote! ( 0usize #(+ <#types>::static_data_size())*)
+	quote! ( 0usize #(+ <#types as cornflakes::StaticDataSize>::static_data_size())*)
 }

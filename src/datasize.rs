@@ -121,17 +121,52 @@ impl<T: DataSize> DataSize for Box<T> {
 }
 
 // Size for references will be the same as the owned type.
-// We don't need to implement DataSize for references because
-// of auto-dereferencing at runtime.
+
+impl<T: DataSize> DataSize for &T {
+	default fn data_size(&self) -> usize {
+		0usize + <T as DataSize>::data_size(&self)
+	}
+}
+
+impl<T: DataSize + StaticDataSize> DataSize for &T {
+	fn data_size(&self) -> usize {
+		<Self as StaticDataSize>::static_data_size()
+	}
+}
+
 impl<T: StaticDataSize> StaticDataSize for &T {
 	fn static_data_size() -> usize {
 		<T>::static_data_size()
 	}
 }
 
+impl<T: DataSize> DataSize for &mut T {
+	default fn data_size(&self) -> usize {
+		0usize + <T as DataSize>::data_size(&self)
+	}
+}
+
+impl<T: DataSize + StaticDataSize> DataSize for &mut T {
+	fn data_size(&self) -> usize {
+		<Self as StaticDataSize>::static_data_size()
+	}
+}
+
 impl<T: StaticDataSize> StaticDataSize for &mut T {
 	fn static_data_size() -> usize {
 		<T>::static_data_size()
+	}
+}
+
+impl<T: DataSize> DataSize for Box<T> {
+	default fn data_size(&self) -> usize {
+		0usize + <T as DataSize>::data_size(&self)
+	}
+}
+
+impl<T: DataSize + StaticDataSize> DataSize for Box<T> {
+	fn data_size(&self) -> usize {
+		<Self as StaticDataSize>::static_data_size()
 	}
 }
 
@@ -162,4 +197,6 @@ mod test {
 		let data: Option<Vec<i64>> = Some(vec![i64::default(); 10]);
 		assert_eq!(data.data_size(), 80);
 	}
+
+	// TODO: More tests ?
 }
