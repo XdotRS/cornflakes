@@ -24,11 +24,12 @@
 
 use std::error::Error;
 
-use bytes::{Buf, BufMut};
 use thiserror::Error;
 
 pub type ReadResult<T> = Result<T, ReadError>;
 pub type WriteResult = Result<(), WriteError>;
+
+pub use bytes::{Buf, BufMut};
 
 #[non_exhaustive]
 #[derive(Error, Debug)]
