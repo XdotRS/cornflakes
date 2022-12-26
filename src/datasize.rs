@@ -102,24 +102,6 @@ impl<T: StaticDataSize> StaticDataSize for Option<T> {
 	}
 }
 
-impl<T: DataSize> DataSize for &T {
-	fn data_size(&self) -> usize {
-		T::data_size(self)
-	}
-}
-
-impl<T: DataSize> DataSize for &mut T {
-	fn data_size(&self) -> usize {
-		T::data_size(self)
-	}
-}
-
-impl<T: DataSize> DataSize for Box<T> {
-	fn data_size(&self) -> usize {
-		T::data_size(self)
-	}
-}
-
 // Size for references will be the same as the owned type.
 
 impl<T: DataSize> DataSize for &T {
