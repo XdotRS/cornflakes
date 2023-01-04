@@ -106,55 +106,37 @@ impl<T: StaticDataSize> StaticDataSize for Option<T> {
 
 impl<T: DataSize> DataSize for &T {
 	default fn data_size(&self) -> usize {
-		0usize + <T as DataSize>::data_size(&self)
+		T::data_size(&self)
 	}
 }
 
-impl<T: DataSize + StaticDataSize> DataSize for &T {
-	fn data_size(&self) -> usize {
-		<Self as StaticDataSize>::static_data_size()
-	}
-}
-
-impl<T: StaticDataSize> StaticDataSize for &T {
+impl<T: DataSize + StaticDataSize> StaticDataSize for &T {
 	fn static_data_size() -> usize {
-		<T>::static_data_size()
+		T::static_data_size()
 	}
 }
 
 impl<T: DataSize> DataSize for &mut T {
 	default fn data_size(&self) -> usize {
-		0usize + <T as DataSize>::data_size(&self)
-	}
-}
-
-impl<T: DataSize + StaticDataSize> DataSize for &mut T {
-	fn data_size(&self) -> usize {
-		<Self as StaticDataSize>::static_data_size()
+		T::data_size(&self)
 	}
 }
 
 impl<T: StaticDataSize> StaticDataSize for &mut T {
 	fn static_data_size() -> usize {
-		<T>::static_data_size()
+		T::static_data_size()
 	}
 }
 
 impl<T: DataSize> DataSize for Box<T> {
 	default fn data_size(&self) -> usize {
-		0usize + <T as DataSize>::data_size(&self)
-	}
-}
-
-impl<T: DataSize + StaticDataSize> DataSize for Box<T> {
-	fn data_size(&self) -> usize {
-		<Self as StaticDataSize>::static_data_size()
+		T::data_size(&self)
 	}
 }
 
 impl<T: StaticDataSize> StaticDataSize for Box<T> {
 	fn static_data_size() -> usize {
-		<T>::static_data_size()
+		T::static_data_size()
 	}
 }
 

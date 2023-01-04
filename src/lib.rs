@@ -22,8 +22,8 @@
 #![allow(clippy::wildcard_imports)]
 #![allow(clippy::module_name_repetitions)]
 
+use num::Zero;
 use std::error::Error;
-
 use thiserror::Error;
 
 pub type ReadResult<T> = Result<T, ReadError>;
@@ -99,6 +99,43 @@ pub trait ContextualReadable: DataSize {
 pub trait Writable: DataSize {
 	/// Writes [`self`](Self) as bytes to a [`BufMut`].
 	fn write_to(&self, writer: &mut impl BufMut) -> WriteResult;
+}
+
+// TODO: see if this is actually a good way to do things
+pub trait Wrapper: DataSize {
+	type WrappedType: Writable + Readable + DataSize + StaticDataSize;
+
+	fn wrap(val: Self::WrappedType) -> Self;
+	fn unwrap(&self) -> &Self::WrappedType;
+}
+
+impl<T: Wrapper> Readable for Option<T>
+where
+	T::WrappedType: Zero,
+{
+	fn read_from(buf: &mut impl Buf) -> ReadResult<Self>
+	where
+		Self: Sized,
+	{
+		Ok(match T::WrappedType::read_from(buf)? {
+			x if x.is_zero() => None,
+			val => Some(T::wrap(val)),
+		})
+	}
+}
+
+impl<T: Wrapper> Writable for Option<T>
+where
+	T::WrappedType: Zero,
+{
+	fn write_to(&self, buf: &mut impl BufMut) -> WriteResult {
+		match self {
+			None => T::WrappedType::zero().write_to(buf)?,
+			Some(val) => val.unwrap().write_to(buf)?,
+		}
+
+		Ok(())
+	}
 }
 
 // This function is unused, but writing it here asserts that these traits are
